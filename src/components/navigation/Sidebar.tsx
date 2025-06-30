@@ -296,9 +296,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed }: SidebarProps) => {
                 <div>
                   <NavLink to="/" className="flex items-center space-x-2 mb-2">
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">L1</span>
+                      <span className="text-white font-bold text-sm">Ed</span>
                     </div>
-                    <span className="text-lg font-bold">LearnOne</span>
+                    <span className="text-lg font-bold">EdAxle</span>
                   </NavLink>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     Empowering education worldwide.
