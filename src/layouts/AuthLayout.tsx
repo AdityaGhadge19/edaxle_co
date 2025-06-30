@@ -12,7 +12,7 @@ const AuthLayout = () => {
           <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
             <span className="text-white font-bold">L1</span>
           </div>
-          <span className="text-xl font-bold text-text-primary">LearnOne</span>
+          <span className="text-xl font-bold text-text-primary">EdAxle</span>
         </Link>
         
         <button
