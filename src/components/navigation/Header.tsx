@@ -64,7 +64,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
             
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">L1</span>
+                <span className="text-white font-bold">Ed</span>
               </div>
               <span className="text-xl font-bold hidden sm:block">EdAxle</span>
             </Link>
