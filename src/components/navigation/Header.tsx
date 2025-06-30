@@ -66,7 +66,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                 <span className="text-white font-bold">L1</span>
               </div>
-              <span className="text-xl font-bold hidden sm:block">LearnOne</span>
+              <span className="text-xl font-bold hidden sm:block">EdAxle</span>
             </Link>
           </div>
 
