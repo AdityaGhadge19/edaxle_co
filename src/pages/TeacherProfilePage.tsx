@@ -151,7 +151,7 @@ const TeacherProfilePage = () => {
     if (navigator.share) {
       navigator.share({
         title: `${teacher?.name} - LearnOne`,
-        text: `Check out ${teacher?.name}'s educational content on LearnOne`,
+        text: `Check out ${teacher?.name}'s educational content on EdAxle`,
         url: window.location.href,
       });
     } else {
