@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #1E90FF;
+  --text-color: #000000;
+  --bg-color: #ffffff;
+  --card-bg: #ffffff;
+  --sidebar-bg: #f8f9fa;
+  --border-color: #e5e7eb;
+}
+
+.dark {
+  --primary-color: #1E90FF;
+  --text-color: #ffffff;
+  --bg-color: #121212;
+  --card-bg: #1e1e1e;
+  --sidebar-bg: #0f0f0f;
+  --border-color: #2d2d2d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Force text colors in dark mode */
+.dark * {
+  color: #ffffff !important;
+}
+
+.dark .text-gray-500,
+.dark .text-gray-600,
+.dark .text-gray-400 {
+  color: #a1a1aa !important;
+}
+
+.dark .text-red-500,
+.dark .text-red-600,
+.dark .text-red-400 {
+  color: #ef4444 !important;
+}
+
+.dark .text-green-500,
+.dark .text-green-600,
+.dark .text-green-400 {
+  color: #22c55e !important;
+}
+
+.dark .text-blue-500,
+.dark .text-blue-600,
+.dark .text-blue-400 {
+  color: #1E90FF !important;
+}
+
+.dark .text-yellow-500,
+.dark .text-yellow-600,
+.dark .text-yellow-400 {
+  color: #eab308 !important;
+}
+
+.dark .text-purple-500,
+.dark .text-purple-600,
+.dark .text-purple-400 {
+  color: #a855f7 !important;
+}
+
+.dark .text-orange-500,
+.dark .text-orange-600,
+.dark .text-orange-400 {
+  color: #f97316 !important;
+}
+
+.dark .text-primary {
+  color: #1E90FF !important;
+}
+
+/* Force light mode colors */
+.light *,
+:root * {
+  color: #000000;
+}
+
+.light .text-gray-500,
+.light .text-gray-600,
+.light .text-gray-400,
+:root .text-gray-500,
+:root .text-gray-600,
+:root .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.light .text-primary,
+:root .text-primary {
+  color: #1E90FF !important;
+}
+
+.video-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.video-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-link {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(30, 144, 255, 0.1);
+}
+
+.sidebar-link.active {
+  background-color: rgba(30, 144, 255, 0.2);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.8);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
