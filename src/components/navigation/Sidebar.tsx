@@ -351,7 +351,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed }: SidebarProps) => {
                 
                 <div className="pt-4 border-t border-border-color text-center">
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    © {new Date().getFullYear()} LearnOne. All rights reserved.
+                    © {new Date().getFullYear()} EdAxle. All rights reserved.
                   </p>
                 </div>
               </div>
