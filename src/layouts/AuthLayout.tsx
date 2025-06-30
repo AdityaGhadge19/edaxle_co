@@ -31,7 +31,7 @@ const AuthLayout = () => {
       </div>
       
       <footer className="py-4 text-center text-sm text-gray-500">
-        <p>© {new Date().getFullYear()} LearnOne. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} EdAxle. All rights reserved.</p>
       </footer>
     </div>
   );
