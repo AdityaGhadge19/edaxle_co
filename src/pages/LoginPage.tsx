@@ -27,7 +27,7 @@ const LoginPage = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6 text-center">Sign In to LearnOne</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">Sign In to EdAxle</h1>
       
       {error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md text-sm">
