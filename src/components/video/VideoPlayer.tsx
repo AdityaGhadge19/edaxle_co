@@ -336,12 +336,13 @@ const VideoPlayer = ({
   return (
     <div 
       ref={playerContainerRef}
-      className={`relative overflow-hidden bg-black w-full ${
-        isFullscreen ? 'fixed inset-0 z-[9999]' : 'rounded-lg'
+      className={`relative bg-black w-full ${
+        isFullscreen 
+          ? 'fixed inset-0 z-[9999]' 
+          : isTheaterMode 
+            ? 'h-[25vh] rounded-lg overflow-hidden' 
+            : 'aspect-video rounded-lg overflow-hidden'
       }`}
-      style={{ 
-        aspectRatio: isFullscreen ? 'auto' : '16/9'
-      }}
       tabIndex={0}
     >
       <ReactPlayer
