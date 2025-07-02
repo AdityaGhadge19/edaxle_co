@@ -175,7 +175,7 @@ const VideoNotes = ({ videoId, isTeacher = false }: VideoNotesProps) => {
           {notes.slice(0, 2).map((note) => (
             <div
               key={note.id}
-              className="flex items-center justify-between bg-gray-900 text-white rounded-lg px-6 h-[100px] flex-1 shadow min-w-0"
+              className="flex items-center justify-between bg-gray-900 text-white rounded-lg px-6 h-[50px] flex-1 shadow min-w-0"
             >
               <span className="font-semibold text-lg truncate">{note.title}</span>
               <div className="flex items-center gap-4">
