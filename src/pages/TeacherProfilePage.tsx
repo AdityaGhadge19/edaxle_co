@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Users, Video, Eye, Calendar, Bell, BellOff, Share2, BookOpen, GraduationCap } from 'lucide-react';
+import { Users, Video, Eye, Calendar, Bell, BellOff, Share2, BookOpen, GraduationCap, MessageCircle, Send } from 'lucide-react';
 import { useVideos } from '../contexts/VideoContext';
 import { useAuth } from '../contexts/AuthContext';
 import VideoCard from '../components/video/VideoCard';
@@ -32,6 +32,15 @@ type Course = {
   lessonsCount: number;
 };
 
+type CommunityPost = {
+  id: string;
+  content: string;
+  timestamp: string;
+  likes: number;
+  replies: number;
+  attachments?: string[];
+};
+
 const TeacherProfilePage = () => {
   const { teacherId } = useParams<{ teacherId: string }>();
   const { videos } = useVideos();
@@ -39,6 +48,7 @@ const TeacherProfilePage = () => {
   const [activeTab, setActiveTab] = useState('videos');
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [newPost, setNewPost] = useState('');
 
   // Mock teacher profile data - in a real app, this would come from an API
   const [teacher, setTeacher] = useState<TeacherProfile | null>(null);
@@ -80,6 +90,31 @@ const TeacherProfilePage = () => {
       enrolledStudents: 634,
       rating: 4.9,
       lessonsCount: 30
+    }
+  ]);
+
+  // Mock community posts
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([
+    {
+      id: '1',
+      content: 'Welcome to my channel! I\'ll be sharing regular updates about new courses and mathematical insights. Feel free to ask questions!',
+      timestamp: '2025-01-15T10:30:00Z',
+      likes: 45,
+      replies: 12
+    },
+    {
+      id: '2',
+      content: 'Just uploaded a new video on advanced integration techniques. Check it out and let me know what you think!',
+      timestamp: '2025-01-12T14:20:00Z',
+      likes: 32,
+      replies: 8
+    },
+    {
+      id: '3',
+      content: 'Working on a comprehensive course about differential equations. What specific topics would you like me to cover?',
+      timestamp: '2025-01-10T09:15:00Z',
+      likes: 28,
+      replies: 15
     }
   ]);
 
@@ -150,7 +185,7 @@ const TeacherProfilePage = () => {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${teacher?.name} - LearnOne`,
+        title: `${teacher?.name} - EdAxle`,
         text: `Check out ${teacher?.name}'s educational content on EdAxle`,
         url: window.location.href,
       });
@@ -158,6 +193,30 @@ const TeacherProfilePage = () => {
       navigator.clipboard.writeText(window.location.href);
       alert('Profile link copied to clipboard!');
     }
+  };
+
+  const handlePostSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPost.trim()) return;
+
+    const post: CommunityPost = {
+      id: Date.now().toString(),
+      content: newPost,
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      replies: 0
+    };
+
+    setCommunityPosts([post, ...communityPosts]);
+    setNewPost('');
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   if (!teacher) {
@@ -269,6 +328,7 @@ const TeacherProfilePage = () => {
         <TabsList className="mb-6">
           <TabsTrigger value="videos">Videos ({teacherVideos.length})</TabsTrigger>
           <TabsTrigger value="courses">Courses ({courses.length})</TabsTrigger>
+          <TabsTrigger value="community">Community ({communityPosts.length})</TabsTrigger>
           <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
         
@@ -386,6 +446,102 @@ const TeacherProfilePage = () => {
               <p className="text-gray-500 dark:text-gray-400">No courses available yet</p>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="community">
+          <div className="bg-card-bg rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center">
+                <MessageCircle className="mr-2" size={24} />
+                Community Updates
+              </h2>
+            </div>
+
+            {/* Post Creation - Only for the teacher */}
+            {user && user.name === teacher.name && (
+              <form onSubmit={handlePostSubmit} className="mb-6 p-4 border border-border-color rounded-lg">
+                <div className="flex space-x-3">
+                  <img
+                    src={teacher.avatar}
+                    alt={teacher.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <textarea
+                      value={newPost}
+                      onChange={(e) => setNewPost(e.target.value)}
+                      className="w-full px-3 py-2 border border-border-color rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      placeholder="Share an update with your community..."
+                      rows={3}
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button
+                        type="submit"
+                        disabled={!newPost.trim()}
+                        className="flex items-center space-x-2 py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Send size={16} />
+                        <span>Post</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* Community Posts */}
+            {communityPosts.length > 0 ? (
+              <div className="space-y-4">
+                {communityPosts.map((post) => (
+                  <div key={post.id} className="border border-border-color rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <img
+                        src={teacher.avatar}
+                        alt={teacher.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h4 className="font-medium">{teacher.name}</h4>
+                          {teacher.isVerified && (
+                            <div className="text-primary">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                          <span className="text-sm text-gray-500">{formatTime(post.timestamp)}</span>
+                        </div>
+                        
+                        <p className="mb-3 leading-relaxed">{post.content}</p>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                          <button className="flex items-center space-x-1 hover:text-primary transition">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>{post.likes}</span>
+                          </button>
+                          <button className="flex items-center space-x-1 hover:text-primary transition">
+                            <MessageCircle size={16} />
+                            <span>{post.replies} replies</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <MessageCircle size={48} className="mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No community posts yet</p>
+                {user && user.name === teacher.name && (
+                  <p className="text-sm text-gray-400 mt-2">Share your first update with your community!</p>
+                )}
+              </div>
+            )}
+          </div>
         </TabsContent>
         
         <TabsContent value="about">

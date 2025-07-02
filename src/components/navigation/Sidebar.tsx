@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   Home, BookOpen, Award, Book, Clock, Bookmark, 
   Heart, Video, Upload, BarChart2, Users, MessageCircle,
-  HardDrive, Brain
+  Brain
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -70,20 +70,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed }: SidebarProps) => {
             </NavLink>
             
             <NavLink
-              to="/communities"
-              onClick={handleLinkClick}
-              className={({ isActive }) => 
-                `flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'} rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition ${
-                  isActive ? 'bg-gray-100 dark:bg-gray-800 text-primary font-medium' : ''
-                }`
-              }
-              title={isCollapsed ? 'Communities' : ''}
-            >
-              <MessageCircle size={20} className={isCollapsed ? '' : 'mr-3'} />
-              {!isCollapsed && <span>Communities</span>}
-            </NavLink>
-            
-            <NavLink
               to="/quizone"
               onClick={handleLinkClick}
               className={({ isActive }) => 
@@ -109,20 +95,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed }: SidebarProps) => {
             >
               <Award size={20} className={isCollapsed ? '' : 'mr-3'} />
               {!isCollapsed && <span>Certifications</span>}
-            </NavLink>
-            
-            <NavLink
-              to="/learn-vault"
-              onClick={handleLinkClick}
-              className={({ isActive }) => 
-                `flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'} rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition ${
-                  isActive ? 'bg-gray-100 dark:bg-gray-800 text-primary font-medium' : ''
-                }`
-              }
-              title={isCollapsed ? 'Learn Vault' : ''}
-            >
-              <HardDrive size={20} className={isCollapsed ? '' : 'mr-3'} />
-              {!isCollapsed && <span>Learn Vault</span>}
             </NavLink>
             
             {isAuthenticated && (
@@ -227,20 +199,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed }: SidebarProps) => {
                     >
                       <Upload size={20} className={isCollapsed ? '' : 'mr-3'} />
                       {!isCollapsed && <span>Upload</span>}
-                    </NavLink>
-                    
-                    <NavLink
-                      to="/teacher/communities"
-                      onClick={handleLinkClick}
-                      className={({ isActive }) => 
-                        `flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'} rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition ${
-                          isActive ? 'bg-gray-100 dark:bg-gray-800 text-primary font-medium' : ''
-                        }`
-                      }
-                      title={isCollapsed ? 'My Communities' : ''}
-                    >
-                      <MessageCircle size={20} className={isCollapsed ? '' : 'mr-3'} />
-                      {!isCollapsed && <span>My Communities</span>}
                     </NavLink>
                   </>
                 )}

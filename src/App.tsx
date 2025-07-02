@@ -18,11 +18,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import CategoryPage from './pages/CategoryPage';
 import TeacherProfilePage from './pages/TeacherProfilePage';
-import CommunitiesPage from './pages/CommunitiesPage';
-import CommunityDetailPage from './pages/CommunityDetailPage';
-import CreateCommunityPage from './pages/CreateCommunityPage';
 import SettingsPage from './pages/SettingsPage';
-import LearnVaultPage from './pages/LearnVaultPage';
 import QuizonePage from './pages/QuizonePage';
 import LiveStreamDashboard from './pages/LiveStreamDashboard';
 import LiveStreamViewer from './pages/LiveStreamViewer';
@@ -62,9 +58,6 @@ function App() {
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/teacher/:teacherId" element={<TeacherProfilePage />} />
-          <Route path="/communities" element={<CommunitiesPage />} />
-          <Route path="/community/:communityId" element={<CommunityDetailPage />} />
-          <Route path="/learn-vault" element={<LearnVaultPage />} />
           <Route path="/quizone" element={<QuizonePage />} />
           <Route path="/live/:streamId" element={<LiveStreamViewer />} />
           
@@ -78,7 +71,6 @@ function App() {
           <Route element={<TeacherRoute />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/upload" element={<TeacherDashboard />} />
-            <Route path="/teacher/communities/create" element={<CreateCommunityPage />} />
             <Route path="/teacher/livestream/create" element={<LiveStreamDashboard />} />
             <Route path="/teacher/quiz/create" element={<QuizonePage />} />
           </Route>
