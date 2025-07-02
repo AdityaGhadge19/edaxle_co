@@ -171,44 +171,32 @@ const VideoNotes = ({ videoId, isTeacher = false }: VideoNotesProps) => {
       )}
 
       {notes.length > 0 ? (
-        <div className="space-y-4">
-          {notes.map((note) => (
-            <div key={note.id} className="border border-border-color rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-medium text-lg">{note.title}</h4>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setSelectedNote(note)}
-                    className="flex items-center space-x-1 text-primary hover:text-primary-dark transition"
+        <div className="flex w-full gap-4 mb-6">
+          {notes.slice(0, 2).map((note) => (
+            <div
+              key={note.id}
+              className="flex items-center justify-between bg-gray-900 text-white rounded-lg px-6 h-[100px] flex-1 shadow min-w-0"
+            >
+              <span className="font-semibold text-lg truncate">{note.title}</span>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSelectedNote(note)}
+                  className="hover:text-blue-400"
+                  title="View"
+                >
+                  <Eye size={22} />
+                </button>
+                {note.fileUrl && (
+                  <a
+                    href={note.fileUrl}
+                    download
+                    className="hover:text-blue-400"
+                    title="Download"
                   >
-                    <Eye size={16} />
-                    <span>View</span>
-                  </button>
-                  {note.fileUrl && (
-                    <a
-                      href={note.fileUrl}
-                      download
-                      className="flex items-center space-x-1 text-primary hover:text-primary-dark transition"
-                    >
-                      <Download size={16} />
-                      <span>Download</span>
-                    </a>
-                  )}
-                </div>
+                    <Download size={22} />
+                  </a>
+                )}
               </div>
-              
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                By {note.teacherName} • {formatDate(note.uploadedAt)}
-              </p>
-              
-              <p className="text-sm line-clamp-3">{note.content}</p>
-              
-              {note.fileUrl && (
-                <div className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
-                  <FileText size={14} className="mr-1" />
-                  <span>Attachment available</span>
-                </div>
-              )}
             </div>
           ))}
         </div>
