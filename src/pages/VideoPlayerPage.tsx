@@ -35,6 +35,7 @@ const VideoPlayerPage = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [followerCount, setFollowerCount] = useState(0);
   const [showDescription, setShowDescription] = useState(false);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
 
   // Mock comments
   const [comments] = useState([
@@ -102,6 +103,7 @@ const VideoPlayerPage = () => {
         setCurrentProgress(0);
         setLikeCount(Math.floor(Math.random() * 5000) + 500);
         setFollowerCount(Math.floor(Math.random() * 100000) + 10000);
+        setIsTheaterMode(false);
       }
     }
   }, [videoId, getVideoById]);
@@ -174,6 +176,10 @@ const VideoPlayerPage = () => {
     setCurrentProgress(progress);
   };
 
+  const handleTheaterModeToggle = () => {
+    setIsTheaterMode(!isTheaterMode);
+  };
+
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
@@ -183,48 +189,49 @@ const VideoPlayerPage = () => {
   if (!video) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Video not found
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Video not found</h2>
+          <p className="text-gray-600 dark:text-gray-400">The video you're looking for doesn't exist.</p>
+          <Link to="/" className="mt-4 inline-block py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition">
+            Go Home
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] gap-8 pt-4 px-2 md:px-6 w-full max-w-[1500px]">
+      <div className={`grid gap-8 pt-4 px-2 md:px-6 w-full max-w-[1500px] ${
+        isTheaterMode 
+          ? 'grid-cols-1' 
+          : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px]'
+      }`}>
         {/* Main Content Column */}
-        <div
-          className="flex flex-col items-center w-full max-w-4xl mx-auto"
-          style={{
-            marginTop: '0.5rem',
+        <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
+          {/* Video Player */}
+          <div className={`w-full bg-black rounded-lg overflow-hidden ${
+            isTheaterMode 
+              ? '-ml-6 -mt-6 md:-ml-10 md:-mt-10' 
+              : '-ml-6 -mt-6 md:-ml-10 md:-mt-10 aspect-video'
+          }`} style={{
             maxWidth: 'calc(100% + 2.5rem)',
             maxHeight: 'calc(100% + 2.5rem)',
-          }}
-        >
-          {/* Video Player */}
-          {/* <div className="w-full aspect-video bg-black rounded-lg overflow-hidden"> */}
-
-          <div
-            className="w-full aspect-video bg-black rounded-lg overflow-hidden -ml-6 -mt-6 md:-ml-10 md:-mt-10"
-            style={{
-              maxWidth: 'calc(100% + 2.5rem)',
-              maxHeight: 'calc(100% + 2.5rem)',
-            }}
-          >
+          }}>
             <VideoPlayer
               videoUrl={video.videoUrl}
               title={video.title}
               onProgress={handleProgress}
+              isTheaterMode={isTheaterMode}
+              onTheaterModeToggle={handleTheaterModeToggle}
             />
           </div>
 
-          {/* Video Info Section - no extra margin on top */}
-          <div
-            className="pt-4 w-full"
-            style={{
-              paddingRight: '1.5rem',
-              marginLeft: '-1rem',
-            }}
-          >
+          {/* Video Info Section */}
+          <div className="pt-4 w-full" style={{
+            paddingRight: '1.5rem',
+            marginLeft: '-1rem',
+          }}>
             <h1 className="text-xl md:text-2xl font-bold mb-2">
               {video.title}
             </h1>
@@ -241,7 +248,7 @@ const VideoPlayerPage = () => {
                   onClick={handleLike}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
                     isLiked
-                      ? 'text-[#1E90FF] bg-[#1E90FF]'
+                      ? 'text-[#1E90FF] bg-[#1E90FF]/10'
                       : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -255,7 +262,7 @@ const VideoPlayerPage = () => {
                   onClick={handleDislike}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
                     isDisliked
-                      ? 'text-[#1E90FF] bg-[#1E90FF]'
+                      ? 'text-[#1E90FF] bg-[#1E90FF]/10'
                       : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -272,7 +279,7 @@ const VideoPlayerPage = () => {
                   onClick={handleSave}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
                     isSaved
-                      ? 'text-[#1E90FF] bg-[#1E90FF]'
+                      ? 'text-[#1E90FF] bg-[#1E90FF]/10'
                       : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -289,17 +296,11 @@ const VideoPlayerPage = () => {
               </div>
             </div>
             <hr className="border-border-color my-3" />
+            
             {/* Channel Info */}
-            <div
-              className="flex items-start justify-between mb-4"
-              style={{ marginTop: '1.5rem' }}
-            >
+            <div className="flex items-start justify-between mb-4" style={{ marginTop: '1.5rem' }}>
               <div className="flex items-start space-x-4">
-                <Link
-                  to={`/teacher/${video.author.name
-                    .replace(/\s+/g, '-')
-                    .toLowerCase()}`}
-                >
+                <Link to={`/teacher/${video.author.name.replace(/\s+/g, '-').toLowerCase()}`}>
                   <img
                     src={video.author.avatar}
                     alt={video.author.name}
@@ -308,9 +309,7 @@ const VideoPlayerPage = () => {
                 </Link>
                 <div>
                   <Link
-                    to={`/teacher/${video.author.name
-                      .replace(/\s+/g, '-')
-                      .toLowerCase()}`}
+                    to={`/teacher/${video.author.name.replace(/\s+/g, '-').toLowerCase()}`}
                     className="font-medium hover:text-[#1E90FF] transition block"
                   >
                     {video.author.name}
@@ -326,7 +325,7 @@ const VideoPlayerPage = () => {
                   className={`flex items-center space-x-2 px-6 py-2 rounded-full font-medium transition ${
                     isFollowing
                       ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                      : 'bg-[#1E90FF] text-white hover:bg-[#1E90FF]/10'
+                      : 'bg-[#1E90FF] text-white hover:bg-[#1E90FF]/90'
                   }`}
                 >
                   <UserPlus size={16} />
@@ -334,6 +333,7 @@ const VideoPlayerPage = () => {
                 </button>
               )}
             </div>
+            
             {/* Description */}
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6">
               <div className={`${showDescription ? '' : 'line-clamp-3'}`}>
@@ -346,6 +346,7 @@ const VideoPlayerPage = () => {
                 {showDescription ? 'Show less' : 'Show more'}
               </button>
             </div>
+            
             {/* Note Taker */}
             <button
               onClick={() => setShowNoteTaker(!showNoteTaker)}
@@ -353,6 +354,7 @@ const VideoPlayerPage = () => {
             >
               {showNoteTaker ? 'Hide Note Taker' : 'Take Notes'}
             </button>
+            
             {showNoteTaker && (
               <div className="bg-card-bg border border-border-color rounded-lg p-4 mb-6">
                 <h3 className="font-medium mb-2">
@@ -378,10 +380,7 @@ const VideoPlayerPage = () => {
                     <h4 className="font-medium mb-2">Your Notes:</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {notes.map((note, index) => (
-                        <div
-                          key={index}
-                          className="bg-background p-2 rounded-md"
-                        >
+                        <div key={index} className="bg-background p-2 rounded-md">
                           <div className="flex justify-between">
                             <span className="text-xs text-[#1E90FF] font-medium">
                               {formatDuration(note.time)}
@@ -403,11 +402,10 @@ const VideoPlayerPage = () => {
                 )}
               </div>
             )}
+            
             {/* Teacher Notes Section */}
-            <VideoNotes
-              videoId={video.id}
-              isTeacher={user?.role === 'teacher'}
-            />
+            <VideoNotes videoId={video.id} isTeacher={user?.role === 'teacher'} />
+            
             {/* Comments Section */}
             <div className="mb-6 mt-6">
               <h3 className="font-medium mb-4 flex items-center">
@@ -418,10 +416,7 @@ const VideoPlayerPage = () => {
                 <form onSubmit={handleSubmitComment} className="mb-6">
                   <div className="flex space-x-3">
                     <img
-                      src={
-                        user.avatar ||
-                        'https://randomuser.me/api/portraits/men/1.jpg'
-                      }
+                      src={user.avatar || 'https://randomuser.me/api/portraits/men/1.jpg'}
                       alt={user.name}
                       className="w-10 h-10 rounded-full object-cover"
                     />
@@ -465,12 +460,8 @@ const VideoPlayerPage = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium text-sm">
-                          {comment.user.name}
-                        </h4>
-                        <span className="text-xs text-gray-500">
-                          {comment.timestamp}
-                        </span>
+                        <h4 className="font-medium text-sm">{comment.user.name}</h4>
+                        <span className="text-xs text-gray-500">{comment.timestamp}</span>
                       </div>
                       <p className="text-sm mb-2">{comment.content}</p>
                       <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
@@ -485,9 +476,7 @@ const VideoPlayerPage = () => {
                         <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
                           <ThumbsDown size={14} />
                         </button>
-                        <button className="hover:text-[#1E90FF] transition">
-                          Reply
-                        </button>
+                        <button className="hover:text-[#1E90FF] transition">Reply</button>
                         {comment.replies > 0 && (
                           <button className="text-[#1E90FF] hover:underline">
                             {comment.replies} replies
@@ -501,47 +490,45 @@ const VideoPlayerPage = () => {
             </div>
           </div>
         </div>
-        {/* Related Videos Sidebar */}
-        <div
-          className="hidden lg:block w-[370px]"
-          style={{
-            marginTop: '-1.5rem',
-          }}
-        >
-          <h3 className="font-medium mb-4">Up Next</h3>
-          <div className="space-y-3">
-            {relatedVideos.slice(0, 10).map((relatedVideo) => (
-              <div
-                key={relatedVideo.id}
-                className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition cursor-pointer"
-              >
-                <Link to={`/video/${relatedVideo.id}`} className="block">
-                  <div className="relative mb-2">
-                    <img
-                      src={relatedVideo.thumbnailUrl}
-                      alt={relatedVideo.title}
-                      className="w-full aspect-video object-cover rounded"
-                    />
-                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 rounded">
-                      {formatDuration(relatedVideo.duration)}
+        
+        {/* Related Videos Sidebar - Only show when not in theater mode */}
+        {!isTheaterMode && (
+          <div className="hidden lg:block w-[370px]" style={{ marginTop: '-1.5rem' }}>
+            <h3 className="font-medium mb-4">Up Next</h3>
+            <div className="space-y-3">
+              {relatedVideos.slice(0, 10).map((relatedVideo) => (
+                <div
+                  key={relatedVideo.id}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition cursor-pointer"
+                >
+                  <Link to={`/video/${relatedVideo.id}`} className="block">
+                    <div className="relative mb-2">
+                      <img
+                        src={relatedVideo.thumbnailUrl}
+                        alt={relatedVideo.title}
+                        className="w-full aspect-video object-cover rounded"
+                      />
+                      <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 rounded">
+                        {formatDuration(relatedVideo.duration)}
+                      </div>
                     </div>
-                  </div>
-                  <h4 className="text-sm font-medium line-clamp-2 hover:text-[#1E90FF] transition mb-1">
-                    {relatedVideo.title}
-                  </h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    {relatedVideo.author.name}
-                  </p>
-                  <div className="text-xs text-gray-500">
-                    <span>{formatViewCount(relatedVideo.views)} views</span>
-                    <span className="mx-1">•</span>
-                    <span>{formatDistanceToNow(relatedVideo.createdAt)}</span>
-                  </div>
-                </Link>
-              </div>
-            ))}
+                    <h4 className="text-sm font-medium line-clamp-2 hover:text-[#1E90FF] transition mb-1">
+                      {relatedVideo.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      {relatedVideo.author.name}
+                    </p>
+                    <div className="text-xs text-gray-500">
+                      <span>{formatViewCount(relatedVideo.views)} views</span>
+                      <span className="mx-1">•</span>
+                      <span>{formatDistanceToNow(relatedVideo.createdAt)}</span>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

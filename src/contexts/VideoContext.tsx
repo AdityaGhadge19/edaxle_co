@@ -113,18 +113,34 @@ const mockCategories: Category[] = [
   },
 ];
 
+// Sample working video URLs for testing
+const sampleVideoUrls = [
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+];
+
 export const VideoProvider = ({ children }: { children: ReactNode }) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Transform Supabase data to our Video type
-  const transformVideo = (dbVideo: any): Video => ({
+  const transformVideo = (dbVideo: any, index: number = 0): Video => ({
     id: dbVideo.id,
     title: dbVideo.title,
     description: dbVideo.description,
     thumbnailUrl: dbVideo.thumbnail_url,
-    videoUrl: dbVideo.video_url,
+    videoUrl: dbVideo.video_url || sampleVideoUrls[index % sampleVideoUrls.length], // Use real video URLs
     duration: dbVideo.duration,
     views: dbVideo.views,
     createdAt: dbVideo.created_at,
@@ -143,8 +159,88 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       setError(null);
       const data = await videoApi.getAll();
-      const transformedVideos = data?.map(transformVideo) || [];
-      setVideos(transformedVideos);
+      const transformedVideos = data?.map((video, index) => transformVideo(video, index)) || [];
+      
+      // If no videos from database, create some sample videos for testing
+      if (transformedVideos.length === 0) {
+        const sampleVideos: Video[] = [
+          {
+            id: 'sample-1',
+            title: 'Introduction to Calculus',
+            description: 'Learn the fundamental concepts of calculus including limits, derivatives, and integrals.',
+            thumbnailUrl: 'https://images.pexels.com/photos/6238297/pexels-photo-6238297.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            videoUrl: sampleVideoUrls[0],
+            duration: 596,
+            views: 2000,
+            createdAt: new Date().toISOString(),
+            author: {
+              id: 'sample-author-1',
+              name: 'Math Masters',
+              avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+              isVerified: true,
+            },
+            category: 'mathematics',
+            tags: ['calculus', 'mathematics', 'derivatives', 'integrals'],
+          },
+          {
+            id: 'sample-2',
+            title: 'Physics: Laws of Motion',
+            description: 'Understanding Newton\'s laws of motion and their applications.',
+            thumbnailUrl: 'https://images.pexels.com/photos/2085832/pexels-photo-2085832.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            videoUrl: sampleVideoUrls[1],
+            duration: 734,
+            views: 5000,
+            createdAt: new Date(Date.now() - 86400000).toISOString(),
+            author: {
+              id: 'sample-author-2',
+              name: 'Physics Academy',
+              avatar: 'https://randomuser.me/api/portraits/men/72.jpg',
+              isVerified: true,
+            },
+            category: 'physics',
+            tags: ['physics', 'mechanics', 'newton laws'],
+          },
+          {
+            id: 'sample-3',
+            title: 'Chemical Bonding Explained',
+            description: 'Understanding different types of chemical bonds and their properties.',
+            thumbnailUrl: 'https://images.pexels.com/photos/2280571/pexels-photo-2280571.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            videoUrl: sampleVideoUrls[2],
+            duration: 420,
+            views: 2700,
+            createdAt: new Date(Date.now() - 172800000).toISOString(),
+            author: {
+              id: 'sample-author-3',
+              name: 'Chemistry Lab',
+              avatar: 'https://randomuser.me/api/portraits/women/32.jpg',
+              isVerified: true,
+            },
+            category: 'chemistry',
+            tags: ['chemistry', 'chemical bonds', 'science'],
+          },
+          {
+            id: 'sample-4',
+            title: 'Introduction to Python Programming',
+            description: 'Learn the basics of Python programming language for beginners.',
+            thumbnailUrl: 'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            videoUrl: sampleVideoUrls[3],
+            duration: 1200,
+            views: 506000,
+            createdAt: new Date(Date.now() - 259200000).toISOString(),
+            author: {
+              id: 'sample-author-4',
+              name: 'Code Masters',
+              avatar: 'https://randomuser.me/api/portraits/women/42.jpg',
+              isVerified: true,
+            },
+            category: 'computer_science',
+            tags: ['programming', 'python', 'coding'],
+          },
+        ];
+        setVideos(sampleVideos);
+      } else {
+        setVideos(transformedVideos);
+      }
     } catch (err) {
       console.error('Error loading videos:', err);
       setError('Failed to load videos');
@@ -161,11 +257,14 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
 
   const createVideo = async (videoData: any) => {
     try {
+      // Use a working video URL for testing
+      const videoUrlToUse = videoData.videoUrl || sampleVideoUrls[Math.floor(Math.random() * sampleVideoUrls.length)];
+      
       const newVideo = await videoApi.create({
         title: videoData.title,
         description: videoData.description,
         thumbnail_url: videoData.thumbnailUrl,
-        video_url: videoData.videoUrl,
+        video_url: videoUrlToUse,
         duration: videoData.duration,
         author_id: videoData.authorId,
         category: videoData.category,
