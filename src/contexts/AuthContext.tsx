@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { profileApi } from '../lib/api/profiles';
 
 type User = {
   id: string;
@@ -6,7 +8,9 @@ type User = {
   email: string;
   role: 'teacher' | 'student';
   avatar?: string;
-  password?: string;
+  bio?: string;
+  subjects?: string[];
+  isVerified?: boolean;
 };
 
 type AuthContextType = {
@@ -17,75 +21,83 @@ type AuthContextType = {
   register: (name: string, email: string, password: string, role: 'teacher' | 'student') => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initial mock users
-const initialMockUsers = [
-  {
-    id: '1',
-    name: 'Teacher Demo',
-    email: 'teacher@learnone.com',
-    password: 'password',
-    role: 'teacher' as const,
-    avatar: 'https://randomuser.me/api/portraits/men/41.jpg',
-  },
-  {
-    id: '2',
-    name: 'Student Demo',
-    email: 'student@learnone.com',
-    password: 'password',
-    role: 'student' as const,
-    avatar: 'https://randomuser.me/api/portraits/women/32.jpg',
-  },
-];
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mockUsers, setMockUsers] = useState<User[]>(initialMockUsers);
 
-  const checkAuth = useCallback(() => {
-    setIsLoading(true);
-    const storedUser = localStorage.getItem('learnone_user');
-    
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user', error);
-        localStorage.removeItem('learnone_user');
+  const transformUser = (profile: any): User => ({
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    role: profile.role,
+    avatar: profile.avatar_url,
+    bio: profile.bio,
+    subjects: profile.subjects,
+    isVerified: profile.is_verified,
+  });
+
+  const checkAuth = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Get user profile from our profiles table
+        const profile = await profileApi.getById(session.user.id);
+        setUser(transformUser(profile));
+      } else {
+        setUser(null);
       }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          const profile = await profileApi.getById(session.user.id);
+          setUser(transformUser(profile));
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [checkAuth]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const user = mockUsers.find(
-        (user) => user.email === email && user.password === password
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (!user) {
-        throw new Error('Invalid credentials');
+      if (error) throw error;
+
+      if (data.user) {
+        const profile = await profileApi.getById(data.user.id);
+        setUser(transformUser(profile));
       }
-
-      const { password: _, ...userWithoutPassword } = user;
-      setUser(userWithoutPassword);
-      localStorage.setItem('learnone_user', JSON.stringify(userWithoutPassword));
-    } catch (error) {
-      console.error('Login failed', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      throw new Error(error.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -94,42 +106,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string, role: 'teacher' | 'student') => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Check if user already exists
-      if (mockUsers.some((user) => user.email === email)) {
-        throw new Error('User already exists');
-      }
-
-      // Create new user
-      const newUser: User = {
-        id: String(mockUsers.length + 1),
-        name,
+      // Sign up with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        role,
-        avatar: `https://randomuser.me/api/portraits/${role === 'teacher' ? 'men' : 'women'}/${Math.floor(Math.random() * 100)}.jpg`,
-      };
-      
-      // Add new user to mock users list
-      setMockUsers(prevUsers => [...prevUsers, newUser]);
-      
-      // Log in the new user (without password)
-      const { password: _, ...userWithoutPassword } = newUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('learnone_user', JSON.stringify(userWithoutPassword));
-    } catch (error) {
-      console.error('Registration failed', error);
-      throw error;
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Create profile in our profiles table
+        const profile = await profileApi.create({
+          id: data.user.id,
+          name,
+          email,
+          role,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+        });
+
+        setUser(transformUser(profile));
+      }
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      throw new Error(error.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('learnone_user');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const updateProfile = async (updates: Partial<User>) => {
+    if (!user) throw new Error('No user logged in');
+
+    try {
+      const updatedProfile = await profileApi.update(user.id, {
+        name: updates.name,
+        bio: updates.bio,
+        avatar_url: updates.avatar,
+        subjects: updates.subjects,
+      });
+
+      setUser(transformUser(updatedProfile));
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      throw error;
+    }
   };
 
   return (
@@ -142,6 +171,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         register,
         logout,
         checkAuth,
+        updateProfile,
       }}
     >
       {children}

@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Upload, X, Plus, CheckSquare } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useVideos } from '../../contexts/VideoContext';
 
 const VideoUploadForm = () => {
+  const { user } = useAuth();
+  const { createVideo } = useVideos();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -60,10 +64,20 @@ const VideoUploadForm = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    // In a real app, you would upload to Supabase Storage or another service
+    // For now, we'll simulate an upload and return a mock URL
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(`https://example.com/uploads/${path}/${file.name}`);
+      }, 1000);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !category || !videoFile) {
+    if (!title || !description || !category || !videoFile || !user) {
       alert('Please fill in all required fields and upload a video');
       return;
     }
@@ -73,23 +87,55 @@ const VideoUploadForm = () => {
       return;
     }
     
-    // Simulate upload process
     setIsUploading(true);
     
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        const newProgress = prev + 5;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setUploadComplete(true);
-            setIsUploading(false);
-          }, 500);
-          return 100;
-        }
-        return newProgress;
+    try {
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev + 10;
+          if (newProgress >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return newProgress;
+        });
+      }, 200);
+
+      // Upload files (simulated)
+      const thumbnailUrl = thumbnail 
+        ? await uploadFile(thumbnail, 'thumbnails')
+        : 'https://images.pexels.com/photos/6238297/pexels-photo-6238297.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+      
+      const videoUrl = await uploadFile(videoFile, 'videos');
+
+      // Get video duration (simulated - in real app, you'd extract this from the video file)
+      const duration = Math.floor(Math.random() * 3600) + 300; // Random duration between 5-65 minutes
+
+      // Create video in database
+      await createVideo({
+        title,
+        description,
+        thumbnailUrl,
+        videoUrl,
+        duration,
+        authorId: user.id,
+        category,
+        tags,
       });
-    }, 300);
+
+      setUploadProgress(100);
+      setTimeout(() => {
+        setUploadComplete(true);
+        setIsUploading(false);
+      }, 500);
+
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Upload failed. Please try again.');
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleReset = () => {
@@ -124,7 +170,7 @@ const VideoUploadForm = () => {
           </div>
           <h3 className="text-xl font-medium mb-2">Upload Complete!</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Your {contentType} has been uploaded successfully and is now being processed.
+            Your {contentType} has been uploaded successfully and is now live on the platform.
           </p>
           <button
             onClick={handleReset}
