@@ -191,8 +191,13 @@ const VideoPlayerPage = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Video not found</h2>
-          <p className="text-gray-600 dark:text-gray-400">The video you're looking for doesn't exist.</p>
-          <Link to="/" className="mt-4 inline-block py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition">
+          <p className="text-gray-600 dark:text-gray-400">
+            The video you're looking for doesn't exist.
+          </p>
+          <Link
+            to="/"
+            className="mt-4 inline-block py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition"
+          >
             Go Home
           </Link>
         </div>
@@ -202,22 +207,33 @@ const VideoPlayerPage = () => {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className={`grid gap-8 pt-4 px-2 md:px-6 w-full max-w-[1500px] ${
-        isTheaterMode 
-          ? 'grid-cols-1' 
-          : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px]'
-      }`}>
+      <div
+        className={`grid gap-8 pt-4 px-2 md:px-6 w-full max-w-[1500px] ${
+          isTheaterMode
+            ? 'grid-cols-1'
+            : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px]'
+        }`}
+      >
         {/* Main Content Column */}
-        <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
+        <div
+          className="flex flex-col items-center w-full max-w-4xl mx-auto"
+          style={{
+            marginLeft: '-0.5rem',
+            marginTop: '1.5rem',
+          }}
+        >
           {/* Video Player */}
-          <div className={`w-full bg-black rounded-lg overflow-hidden ${
-            isTheaterMode 
-              ? '-ml-6 -mt-6 md:-ml-10 md:-mt-10' 
-              : '-ml-6 -mt-6 md:-ml-10 md:-mt-10 aspect-video'
-          }`} style={{
-            maxWidth: 'calc(100% + 2.5rem)',
-            maxHeight: 'calc(100% + 2.5rem)',
-          }}>
+          <div
+            className={`w-full bg-black rounded-lg overflow-hidden ${
+              isTheaterMode
+                ? '-ml-6 -mt-6 md:-ml-10 md:-mt-10'
+                : '-ml-6 -mt-6 md:-ml-10 md:-mt-10 aspect-video'
+            }`}
+            style={{
+              maxWidth: 'calc(100% + 2.5rem)',
+              maxHeight: 'calc(100% + 2.5rem)',
+            }}
+          >
             <VideoPlayer
               videoUrl={video.videoUrl}
               title={video.title}
@@ -228,10 +244,13 @@ const VideoPlayerPage = () => {
           </div>
 
           {/* Video Info Section */}
-          <div className="pt-4 w-full" style={{
-            paddingRight: '1.5rem',
-            marginLeft: '-1rem',
-          }}>
+          <div
+            className="pt-4 w-full"
+            style={{
+              paddingRight: '1.5rem',
+              marginLeft: '-1rem',
+            }}
+          >
             <h1 className="text-xl md:text-2xl font-bold mb-2">
               {video.title}
             </h1>
@@ -296,11 +315,18 @@ const VideoPlayerPage = () => {
               </div>
             </div>
             <hr className="border-border-color my-3" />
-            
+
             {/* Channel Info */}
-            <div className="flex items-start justify-between mb-4" style={{ marginTop: '1.5rem' }}>
+            <div
+              className="flex items-start justify-between mb-4"
+              style={{ marginTop: '1.5rem' }}
+            >
               <div className="flex items-start space-x-4">
-                <Link to={`/teacher/${video.author.name.replace(/\s+/g, '-').toLowerCase()}`}>
+                <Link
+                  to={`/teacher/${video.author.name
+                    .replace(/\s+/g, '-')
+                    .toLowerCase()}`}
+                >
                   <img
                     src={video.author.avatar}
                     alt={video.author.name}
@@ -309,7 +335,9 @@ const VideoPlayerPage = () => {
                 </Link>
                 <div>
                   <Link
-                    to={`/teacher/${video.author.name.replace(/\s+/g, '-').toLowerCase()}`}
+                    to={`/teacher/${video.author.name
+                      .replace(/\s+/g, '-')
+                      .toLowerCase()}`}
                     className="font-medium hover:text-[#1E90FF] transition block"
                   >
                     {video.author.name}
@@ -333,7 +361,7 @@ const VideoPlayerPage = () => {
                 </button>
               )}
             </div>
-            
+
             {/* Description */}
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6">
               <div className={`${showDescription ? '' : 'line-clamp-3'}`}>
@@ -346,7 +374,7 @@ const VideoPlayerPage = () => {
                 {showDescription ? 'Show less' : 'Show more'}
               </button>
             </div>
-            
+
             {/* Note Taker */}
             <button
               onClick={() => setShowNoteTaker(!showNoteTaker)}
@@ -354,7 +382,7 @@ const VideoPlayerPage = () => {
             >
               {showNoteTaker ? 'Hide Note Taker' : 'Take Notes'}
             </button>
-            
+
             {showNoteTaker && (
               <div className="bg-card-bg border border-border-color rounded-lg p-4 mb-6">
                 <h3 className="font-medium mb-2">
@@ -380,7 +408,10 @@ const VideoPlayerPage = () => {
                     <h4 className="font-medium mb-2">Your Notes:</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {notes.map((note, index) => (
-                        <div key={index} className="bg-background p-2 rounded-md">
+                        <div
+                          key={index}
+                          className="bg-background p-2 rounded-md"
+                        >
                           <div className="flex justify-between">
                             <span className="text-xs text-[#1E90FF] font-medium">
                               {formatDuration(note.time)}
@@ -402,10 +433,13 @@ const VideoPlayerPage = () => {
                 )}
               </div>
             )}
-            
+
             {/* Teacher Notes Section */}
-            <VideoNotes videoId={video.id} isTeacher={user?.role === 'teacher'} />
-            
+            <VideoNotes
+              videoId={video.id}
+              isTeacher={user?.role === 'teacher'}
+            />
+
             {/* Comments Section */}
             <div className="mb-6 mt-6">
               <h3 className="font-medium mb-4 flex items-center">
@@ -416,7 +450,10 @@ const VideoPlayerPage = () => {
                 <form onSubmit={handleSubmitComment} className="mb-6">
                   <div className="flex space-x-3">
                     <img
-                      src={user.avatar || 'https://randomuser.me/api/portraits/men/1.jpg'}
+                      src={
+                        user.avatar ||
+                        'https://randomuser.me/api/portraits/men/1.jpg'
+                      }
                       alt={user.name}
                       className="w-10 h-10 rounded-full object-cover"
                     />
@@ -460,8 +497,12 @@ const VideoPlayerPage = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium text-sm">{comment.user.name}</h4>
-                        <span className="text-xs text-gray-500">{comment.timestamp}</span>
+                        <h4 className="font-medium text-sm">
+                          {comment.user.name}
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          {comment.timestamp}
+                        </span>
                       </div>
                       <p className="text-sm mb-2">{comment.content}</p>
                       <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
@@ -476,7 +517,9 @@ const VideoPlayerPage = () => {
                         <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
                           <ThumbsDown size={14} />
                         </button>
-                        <button className="hover:text-[#1E90FF] transition">Reply</button>
+                        <button className="hover:text-[#1E90FF] transition">
+                          Reply
+                        </button>
                         {comment.replies > 0 && (
                           <button className="text-[#1E90FF] hover:underline">
                             {comment.replies} replies
@@ -490,10 +533,13 @@ const VideoPlayerPage = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Related Videos Sidebar - Only show when not in theater mode */}
         {!isTheaterMode && (
-          <div className="hidden lg:block w-[370px]" style={{ marginTop: '-1.5rem' }}>
+          <div
+            className="hidden lg:block w-[370px]"
+            style={{ marginTop: '-1rem' }}
+          >
             <h3 className="font-medium mb-4">Up Next</h3>
             <div className="space-y-3">
               {relatedVideos.slice(0, 10).map((relatedVideo) => (
