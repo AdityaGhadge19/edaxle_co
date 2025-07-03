@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  Home, BookOpen, Award, Book, Clock, Bookmark, 
-  Heart, Video, Upload, BarChart2, Users, MessageCircle,
+  Home, BookOpen, Award, Clock, Bookmark, 
+  Heart, Video, Upload, BarChart2, Users, 
   Brain
 } from 'lucide-react';
 
