@@ -42,6 +42,8 @@ type VideoContextType = {
   searchVideos: (query: string) => Video[];
   refreshVideos: () => Promise<void>;
   createVideo: (videoData: any) => Promise<void>;
+  incrementVideoViews: (videoId: string, userId?: string) => Promise<void>;
+  viewedVideos: Set<string>;
 };
 
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
@@ -150,6 +152,25 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set());
+
+  // Load viewed videos from localStorage on mount
+  useEffect(() => {
+    const savedViewedVideos = localStorage.getItem('viewedVideos');
+    if (savedViewedVideos) {
+      try {
+        const parsed = JSON.parse(savedViewedVideos);
+        setViewedVideos(new Set(parsed));
+      } catch (error) {
+        console.error('Error parsing viewed videos from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save viewed videos to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('viewedVideos', JSON.stringify(Array.from(viewedVideos)));
+  }, [viewedVideos]);
 
   // Transform Supabase data to our Video type
   const transformVideo = (dbVideo: any, index: number = 0): Video => {
@@ -306,6 +327,46 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const incrementVideoViews = async (videoId: string, userId?: string) => {
+    // Check if this video has already been viewed by this user/session
+    if (viewedVideos.has(videoId)) {
+      return; // Don't increment view if already viewed
+    }
+
+    try {
+      // Add to viewed videos set
+      setViewedVideos(prev => new Set([...prev, videoId]));
+
+      // Update the video views in the local state immediately for better UX
+      setVideos(prevVideos => 
+        prevVideos.map(video => 
+          video.id === videoId 
+            ? { ...video, views: video.views + 1 }
+            : video
+        )
+      );
+
+      // Call the API to increment views in the database
+      await videoApi.incrementViews(videoId, userId);
+    } catch (error) {
+      console.error('Error incrementing video views:', error);
+      // Revert the local state change if API call fails
+      setViewedVideos(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(videoId);
+        return newSet;
+      });
+      
+      setVideos(prevVideos => 
+        prevVideos.map(video => 
+          video.id === videoId 
+            ? { ...video, views: video.views - 1 }
+            : video
+        )
+      );
+    }
+  };
+
   // Filter for featured videos (could be based on various criteria)
   const featuredVideos = videos
     .filter(video => video.views > 1000)
@@ -354,6 +415,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         searchVideos,
         refreshVideos: loadVideos,
         createVideo,
+        incrementVideoViews,
+        viewedVideos,
       }}
     >
       {children}

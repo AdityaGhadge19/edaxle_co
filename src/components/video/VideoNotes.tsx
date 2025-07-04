@@ -83,6 +83,11 @@ const VideoNotes = ({ videoId, isTeacher = false }: VideoNotesProps) => {
     });
   };
 
+  // Don't render the component if there are no notes and user is not a teacher
+  if (notes.length === 0 && !isTeacher) {
+    return null;
+  }
+
   return (
     <div className="bg-card-bg rounded-lg shadow-md p-6 mt-6">
       <div className="flex justify-between items-center mb-6">

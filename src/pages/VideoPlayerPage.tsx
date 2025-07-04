@@ -20,7 +20,7 @@ import { formatViewCount } from '../utils/formatUtils';
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams<{ videoId: string }>();
-  const { getVideoById, videos } = useVideos();
+  const { getVideoById, videos, incrementVideoViews } = useVideos();
   const { user } = useAuth();
   const [video, setVideo] = useState(getVideoById(videoId || ''));
   const [isLiked, setIsLiked] = useState(false);
@@ -36,6 +36,8 @@ const VideoPlayerPage = () => {
   const [followerCount, setFollowerCount] = useState(0);
   const [showDescription, setShowDescription] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
+  const [hasNotes, setHasNotes] = useState(true); // Mock - in real app, check if video has notes
 
   // Mock comments
   const [comments] = useState([
@@ -104,9 +106,27 @@ const VideoPlayerPage = () => {
         setLikeCount(Math.floor(Math.random() * 5000) + 500);
         setFollowerCount(Math.floor(Math.random() * 100000) + 10000);
         setIsTheaterMode(false);
+        setHasViewBeenCounted(false);
+        // Mock check for notes - in real app, check if video has notes from API
+        setHasNotes(Math.random() > 0.3); // 70% chance of having notes
       }
     }
   }, [videoId, getVideoById]);
+
+  // Handle view counting when video starts playing
+  const handleVideoPlay = async () => {
+    if (!hasViewBeenCounted && video && videoId) {
+      try {
+        await incrementVideoViews(videoId, user?.id);
+        setHasViewBeenCounted(true);
+        
+        // Update the local video state with new view count
+        setVideo(prev => prev ? { ...prev, views: prev.views + 1 } : prev);
+      } catch (error) {
+        console.error('Error counting view:', error);
+      }
+    }
+  };
 
   const handleLike = () => {
     if (isLiked) {
@@ -240,6 +260,7 @@ const VideoPlayerPage = () => {
               onProgress={handleProgress}
               isTheaterMode={isTheaterMode}
               onTheaterModeToggle={handleTheaterModeToggle}
+              onPlay={handleVideoPlay}
             />
           </div>
 
@@ -434,11 +455,13 @@ const VideoPlayerPage = () => {
               </div>
             )}
 
-            {/* Teacher Notes Section */}
-            <VideoNotes
-              videoId={video.id}
-              isTeacher={user?.role === 'teacher'}
-            />
+            {/* Teacher Notes Section - Only show if video has notes */}
+            {hasNotes && (
+              <VideoNotes
+                videoId={video.id}
+                isTeacher={user?.role === 'teacher'}
+              />
+            )}
 
             {/* Comments Section */}
             <div className="mb-6 mt-6">
@@ -487,49 +510,59 @@ const VideoPlayerPage = () => {
                   </div>
                 </form>
               )}
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <img
-                      src={comment.user.avatar}
-                      alt={comment.user.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium text-sm">
-                          {comment.user.name}
-                        </h4>
-                        <span className="text-xs text-gray-500">
-                          {comment.timestamp}
-                        </span>
-                      </div>
-                      <p className="text-sm mb-2">{comment.content}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-                        <button
-                          className={`flex items-center space-x-1 hover:text-[#1E90FF] transition ${
-                            comment.isLiked ? 'text-[#1E90FF]' : ''
-                          }`}
-                        >
-                          <ThumbsUp size={14} />
-                          <span>{comment.likes}</span>
-                        </button>
-                        <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
-                          <ThumbsDown size={14} />
-                        </button>
-                        <button className="hover:text-[#1E90FF] transition">
-                          Reply
-                        </button>
-                        {comment.replies > 0 && (
-                          <button className="text-[#1E90FF] hover:underline">
-                            {comment.replies} replies
+              
+              {/* Comments List */}
+              {comments.length > 0 ? (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="flex space-x-3">
+                      <img
+                        src={comment.user.avatar}
+                        alt={comment.user.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-medium text-sm">
+                            {comment.user.name}
+                          </h4>
+                          <span className="text-xs text-gray-500">
+                            {comment.timestamp}
+                          </span>
+                        </div>
+                        <p className="text-sm mb-2">{comment.content}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                          <button
+                            className={`flex items-center space-x-1 hover:text-[#1E90FF] transition ${
+                              comment.isLiked ? 'text-[#1E90FF]' : ''
+                            }`}
+                          >
+                            <ThumbsUp size={14} />
+                            <span>{comment.likes}</span>
                           </button>
-                        )}
+                          <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
+                            <ThumbsDown size={14} />
+                          </button>
+                          <button className="hover:text-[#1E90FF] transition">
+                            Reply
+                          </button>
+                          {comment.replies > 0 && (
+                            <button className="text-[#1E90FF] hover:underline">
+                              {comment.replies} replies
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">Be the first one to comment!</p>
+                  <p className="text-sm">Share your thoughts about this video.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

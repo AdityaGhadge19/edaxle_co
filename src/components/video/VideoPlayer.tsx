@@ -13,6 +13,7 @@ type VideoPlayerProps = {
   onProgress?: (progress: number) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: () => void;
+  onPlay?: () => void;
 };
 
 const VideoPlayer = ({ 
@@ -20,7 +21,8 @@ const VideoPlayer = ({
   title, 
   onProgress, 
   isTheaterMode = false, 
-  onTheaterModeToggle 
+  onTheaterModeToggle,
+  onPlay
 }: VideoPlayerProps) => {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
@@ -37,6 +39,7 @@ const VideoPlayer = ({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
 
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -207,7 +210,15 @@ const VideoPlayer = ({
 
   const handlePlayPause = () => {
     if (!isReady) return;
-    setPlaying(!playing);
+    
+    const newPlayingState = !playing;
+    setPlaying(newPlayingState);
+    
+    // Call onPlay callback when video starts playing for the first time
+    if (newPlayingState && !hasStartedPlaying && onPlay) {
+      setHasStartedPlaying(true);
+      onPlay();
+    }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
