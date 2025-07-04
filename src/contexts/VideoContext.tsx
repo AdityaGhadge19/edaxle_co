@@ -129,30 +129,57 @@ const sampleVideoUrls = [
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
 ];
 
+// Function to check if a video URL is a placeholder or non-functional
+const isPlaceholderUrl = (url: string): boolean => {
+  if (!url) return true;
+  
+  const placeholderDomains = [
+    'example.com',
+    'sample-videos.com',
+    'placeholder.com',
+    'test.com',
+    'demo.com',
+    'localhost',
+    '127.0.0.1'
+  ];
+  
+  return placeholderDomains.some(domain => url.includes(domain));
+};
+
 export const VideoProvider = ({ children }: { children: ReactNode }) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Transform Supabase data to our Video type
-  const transformVideo = (dbVideo: any, index: number = 0): Video => ({
-    id: dbVideo.id,
-    title: dbVideo.title,
-    description: dbVideo.description,
-    thumbnailUrl: dbVideo.thumbnail_url,
-    videoUrl: dbVideo.video_url || sampleVideoUrls[index % sampleVideoUrls.length], // Use real video URLs
-    duration: dbVideo.duration,
-    views: dbVideo.views,
-    createdAt: dbVideo.created_at,
-    author: {
-      id: dbVideo.profiles?.id || dbVideo.author_id,
-      name: dbVideo.profiles?.name || 'Unknown',
-      avatar: dbVideo.profiles?.avatar_url || 'https://randomuser.me/api/portraits/men/1.jpg',
-      isVerified: dbVideo.profiles?.is_verified || false,
-    },
-    category: dbVideo.category,
-    tags: dbVideo.tags || [],
-  });
+  const transformVideo = (dbVideo: any, index: number = 0): Video => {
+    // Check if the video URL from database is a placeholder or non-functional
+    let videoUrl = dbVideo.video_url;
+    
+    if (!videoUrl || isPlaceholderUrl(videoUrl)) {
+      // Use a working sample video URL instead
+      videoUrl = sampleVideoUrls[index % sampleVideoUrls.length];
+    }
+
+    return {
+      id: dbVideo.id,
+      title: dbVideo.title,
+      description: dbVideo.description,
+      thumbnailUrl: dbVideo.thumbnail_url,
+      videoUrl: videoUrl,
+      duration: dbVideo.duration,
+      views: dbVideo.views,
+      createdAt: dbVideo.created_at,
+      author: {
+        id: dbVideo.profiles?.id || dbVideo.author_id,
+        name: dbVideo.profiles?.name || 'Unknown',
+        avatar: dbVideo.profiles?.avatar_url || 'https://randomuser.me/api/portraits/men/1.jpg',
+        isVerified: dbVideo.profiles?.is_verified || false,
+      },
+      category: dbVideo.category,
+      tags: dbVideo.tags || [],
+    };
+  };
 
   const loadVideos = async () => {
     try {
