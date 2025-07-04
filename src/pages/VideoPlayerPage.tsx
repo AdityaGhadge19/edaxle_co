@@ -37,50 +37,55 @@ const VideoPlayerPage = () => {
   const [showDescription, setShowDescription] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
-  const [hasNotes, setHasNotes] = useState(true); // Mock - in real app, check if video has notes
+  const [hasNotes, setHasNotes] = useState(true);
+  const [comments, setComments] = useState<any[]>([]);
 
-  // Mock comments
-  const [comments] = useState([
-    {
-      id: '1',
-      user: {
-        name: 'Sarah Johnson',
-        avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+  // Initialize comments with mock data
+  useEffect(() => {
+    // Mock comments - in real app, fetch from API
+    const mockComments = [
+      {
+        id: '1',
+        user: {
+          name: 'Sarah Johnson',
+          avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+        },
+        content: 'This explanation is so clear! Finally understood this concept. Thank you!',
+        timestamp: '2 days ago',
+        likes: 24,
+        replies: 3,
+        isLiked: false,
       },
-      content:
-        'This explanation is so clear! Finally understood this concept. Thank you!',
-      timestamp: '2 days ago',
-      likes: 24,
-      replies: 3,
-      isLiked: false,
-    },
-    {
-      id: '2',
-      user: {
-        name: 'Michael Chen',
-        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      {
+        id: '2',
+        user: {
+          name: 'Michael Chen',
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+        },
+        content: 'Could you make a follow-up video about advanced applications of this topic?',
+        timestamp: '1 week ago',
+        likes: 8,
+        replies: 1,
+        isLiked: false,
       },
-      content:
-        'Could you make a follow-up video about advanced applications of this topic?',
-      timestamp: '1 week ago',
-      likes: 8,
-      replies: 1,
-      isLiked: false,
-    },
-    {
-      id: '3',
-      user: {
-        name: 'Emma Wilson',
-        avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
+      {
+        id: '3',
+        user: {
+          name: 'Emma Wilson',
+          avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
+        },
+        content: 'The examples you provided really helped me understand the practical applications. Great work!',
+        timestamp: '3 days ago',
+        likes: 15,
+        replies: 0,
+        isLiked: true,
       },
-      content:
-        'The examples you provided really helped me understand the practical applications. Great work!',
-      timestamp: '3 days ago',
-      likes: 15,
-      replies: 0,
-      isLiked: true,
-    },
-  ]);
+    ];
+    
+    // Randomly show 0-3 comments to test empty state
+    const randomCommentCount = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+    setComments(mockComments.slice(0, randomCommentCount));
+  }, [videoId]);
 
   // Simulate related videos - more videos for better suggestions
   const relatedVideos = videos
@@ -185,11 +190,37 @@ const VideoPlayerPage = () => {
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (comment.trim()) {
-      console.log('Comment submitted:', comment);
+    if (comment.trim() && user) {
+      const newComment = {
+        id: Date.now().toString(),
+        user: {
+          name: user.name,
+          avatar: user.avatar || 'https://randomuser.me/api/portraits/men/1.jpg',
+        },
+        content: comment,
+        timestamp: 'just now',
+        likes: 0,
+        replies: 0,
+        isLiked: false,
+      };
+      
+      setComments([newComment, ...comments]);
       setComment('');
-      alert('Comment submitted successfully!');
     }
+  };
+
+  const handleCommentLike = (commentId: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              isLiked: !comment.isLiked,
+              likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1
+            }
+          : comment
+      )
+    );
   };
 
   const handleProgress = (progress: number) => {
@@ -533,6 +564,7 @@ const VideoPlayerPage = () => {
                         <p className="text-sm mb-2">{comment.content}</p>
                         <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                           <button
+                            onClick={() => handleCommentLike(comment.id)}
                             className={`flex items-center space-x-1 hover:text-[#1E90FF] transition ${
                               comment.isLiked ? 'text-[#1E90FF]' : ''
                             }`}

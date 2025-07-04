@@ -149,12 +149,41 @@ export const videoApi = {
 
   // Increment video views
   async incrementViews(videoId: string, userId?: string) {
-    const { error } = await supabase.rpc('increment_video_views', {
-      video_uuid: videoId,
-      user_uuid: userId || null
-    })
+    try {
+      // First, increment the views count in the videos table
+      const { error: updateError } = await supabase
+        .from('videos')
+        .update({ 
+          views: supabase.sql`views + 1`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', videoId)
 
-    if (error) throw error
+      if (updateError) throw updateError
+
+      // If userId is provided, also track the view in video_views table
+      if (userId) {
+        const { error: viewError } = await supabase
+          .from('video_views')
+          .upsert({
+            user_id: userId,
+            video_id: videoId,
+            watch_time_seconds: 0,
+            completed: false,
+            last_watched_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,video_id'
+          })
+
+        if (viewError) {
+          console.warn('Error tracking user view:', viewError)
+          // Don't throw here as the main view increment succeeded
+        }
+      }
+    } catch (error) {
+      console.error('Error incrementing views:', error)
+      throw error
+    }
   },
 
   // Get trending videos (most views in last 7 days)

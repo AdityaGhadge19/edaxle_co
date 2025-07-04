@@ -23,6 +23,10 @@ const FeaturedVideos = ({ videos, title }: FeaturedVideosProps) => {
             views={video.views}
             createdAt={video.createdAt}
             duration={video.duration}
+            tags={video.tags}
+            likes={Math.floor(Math.random() * 1000) + 100}
+            commentCount={Math.floor(Math.random() * 50) + 5}
+            showStats={true}
           />
         ))}
       </div>

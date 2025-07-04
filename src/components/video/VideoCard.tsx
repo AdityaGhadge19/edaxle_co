@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from '../../utils/dateUtils';
 import { formatViewCount, formatDuration } from '../../utils/formatUtils';
+import { MessageSquare, ThumbsUp } from 'lucide-react';
 
 type VideoCardProps = {
   id: string;
@@ -15,6 +16,8 @@ type VideoCardProps = {
   likes?: number;
   isLiked?: boolean;
   onLike?: () => void;
+  commentCount?: number;
+  showStats?: boolean;
 };
 
 const VideoCard = ({
@@ -29,7 +32,9 @@ const VideoCard = ({
   tags = [],
   likes = 0,
   isLiked = false,
-  onLike
+  onLike,
+  commentCount = 0,
+  showStats = false
 }: VideoCardProps) => {
   return (
     <div className="video-card bg-card-bg rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300">
@@ -97,13 +102,25 @@ const VideoCard = ({
                     isLiked ? 'text-red-500' : 'text-gray-500'
                   } hover:text-red-500 transition`}
                 >
-                  <svg className="w-3 h-3" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                  <ThumbsUp size={12} fill={isLiked ? 'currentColor' : 'none'} />
                   <span>{formatViewCount(likes)}</span>
                 </button>
               )}
             </div>
+            
+            {/* Additional stats if enabled */}
+            {showStats && (
+              <div className="flex items-center space-x-3 mt-2 text-xs text-gray-500">
+                <div className="flex items-center space-x-1">
+                  <ThumbsUp size={10} />
+                  <span>{formatViewCount(likes)}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <MessageSquare size={10} />
+                  <span>{formatViewCount(commentCount)}</span>
+                </div>
+              </div>
+            )}
             
             {/* Tags below video info */}
             {tags.length > 0 && (
