@@ -66,10 +66,16 @@ const VideoUploadForm = () => {
 
   const uploadFile = async (file: File, path: string): Promise<string> => {
     // In a real app, you would upload to Supabase Storage or another service
-    // For now, we'll simulate an upload and return a mock URL
+    // For now, we'll simulate an upload and return a working video URL for testing
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(`https://example.com/uploads/${path}/${file.name}`);
+        if (path === 'videos') {
+          // Return a real, publicly accessible video URL for testing
+          resolve('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
+        } else {
+          // For thumbnails, keep using the existing placeholder
+          resolve(`https://example.com/uploads/${path}/${file.name}`);
+        }
       }, 1000);
     });
   };
