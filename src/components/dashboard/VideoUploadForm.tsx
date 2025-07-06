@@ -5,7 +5,7 @@ import { useVideos } from '../../contexts/VideoContext';
 
 const VideoUploadForm = () => {
   const { user } = useAuth();
-  const { createVideo } = useVideos();
+  const { createVideo, refreshVideos } = useVideos();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -64,6 +64,26 @@ const VideoUploadForm = () => {
     }
   };
 
+  // Function to get video duration from file
+  const getVideoDuration = (file: File): Promise<number> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        resolve(Math.floor(video.duration));
+      };
+      
+      video.onerror = () => {
+        // Fallback to random duration if can't read metadata
+        resolve(Math.floor(Math.random() * 3600) + 300);
+      };
+      
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
   const uploadFile = async (file: File, path: string): Promise<string> => {
     // In a real app, you would upload to Supabase Storage or another service
     // For now, we'll simulate an upload and return a working video URL for testing
@@ -115,10 +135,10 @@ const VideoUploadForm = () => {
       
       const videoUrl = await uploadFile(videoFile, 'videos');
 
-      // Get video duration (simulated - in real app, you'd extract this from the video file)
-      const duration = Math.floor(Math.random() * 3600) + 300; // Random duration between 5-65 minutes
+      // Get actual video duration from the uploaded file
+      const duration = await getVideoDuration(videoFile);
 
-      // Create video in database
+      // Create video in database and context
       await createVideo({
         title,
         description,
@@ -131,6 +151,10 @@ const VideoUploadForm = () => {
       });
 
       setUploadProgress(100);
+      
+      // Refresh videos to show the new upload immediately
+      await refreshVideos();
+      
       setTimeout(() => {
         setUploadComplete(true);
         setIsUploading(false);
@@ -178,12 +202,20 @@ const VideoUploadForm = () => {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Your {contentType} has been uploaded successfully and is now live on the platform.
           </p>
-          <button
-            onClick={handleReset}
-            className="py-2 px-4 bg-primary hover:bg-primary-dark text-white rounded-md transition"
-          >
-            Upload Another {contentType === 'course' ? 'Course' : 'Video'}
-          </button>
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={handleReset}
+              className="py-2 px-4 bg-primary hover:bg-primary-dark text-white rounded-md transition"
+            >
+              Upload Another {contentType === 'course' ? 'Course' : 'Video'}
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="py-2 px-4 border border-border-color rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              View All Videos
+            </button>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>

@@ -20,7 +20,7 @@ import { formatViewCount } from '../utils/formatUtils';
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams<{ videoId: string }>();
-  const { getVideoById, videos, incrementVideoViews } = useVideos();
+  const { getVideoById, videos, incrementVideoViews, updateVideoStats } = useVideos();
   const { user } = useAuth();
   const [video, setVideo] = useState(getVideoById(videoId || ''));
   const [isLiked, setIsLiked] = useState(false);
@@ -108,7 +108,7 @@ const VideoPlayerPage = () => {
         setIsFollowing(Math.random() > 0.5);
         setNotes([]);
         setCurrentProgress(0);
-        setLikeCount(Math.floor(Math.random() * 5000) + 500);
+        setLikeCount(foundVideo.likes || Math.floor(Math.random() * 5000) + 500);
         setFollowerCount(Math.floor(Math.random() * 100000) + 10000);
         setIsTheaterMode(false);
         setHasViewBeenCounted(false);
@@ -135,13 +135,25 @@ const VideoPlayerPage = () => {
 
   const handleLike = () => {
     if (isLiked) {
-      setLikeCount((prev: number) => prev - 1);
+      const newLikeCount = likeCount - 1;
+      setLikeCount(newLikeCount);
       setIsLiked(false);
+      
+      // Update video stats in context
+      if (video) {
+        updateVideoStats(video.id, { likes: newLikeCount });
+      }
     } else {
-      setLikeCount((prev: number) => prev + 1);
+      const newLikeCount = likeCount + 1;
+      setLikeCount(newLikeCount);
       setIsLiked(true);
       if (isDisliked) {
         setIsDisliked(false);
+      }
+      
+      // Update video stats in context
+      if (video) {
+        updateVideoStats(video.id, { likes: newLikeCount });
       }
     }
   };
@@ -149,8 +161,14 @@ const VideoPlayerPage = () => {
   const handleDislike = () => {
     setIsDisliked(!isDisliked);
     if (isLiked) {
-      setLikeCount((prev: number) => prev - 1);
+      const newLikeCount = likeCount - 1;
+      setLikeCount(newLikeCount);
       setIsLiked(false);
+      
+      // Update video stats in context
+      if (video) {
+        updateVideoStats(video.id, { likes: newLikeCount });
+      }
     }
   };
 
@@ -206,6 +224,12 @@ const VideoPlayerPage = () => {
       
       setComments([newComment, ...comments]);
       setComment('');
+      
+      // Update comment count in video stats
+      if (video) {
+        const newCommentCount = comments.length + 1;
+        updateVideoStats(video.id, { commentCount: newCommentCount });
+      }
     }
   };
 

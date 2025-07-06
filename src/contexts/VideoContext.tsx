@@ -19,6 +19,8 @@ export type Video = {
   };
   category: string;
   tags: string[];
+  likes?: number;
+  commentCount?: number;
 };
 
 export type Category = {
@@ -44,6 +46,7 @@ type VideoContextType = {
   createVideo: (videoData: any) => Promise<void>;
   incrementVideoViews: (videoId: string, userId?: string) => Promise<void>;
   viewedVideos: Set<string>;
+  updateVideoStats: (videoId: string, updates: { views?: number; likes?: number; commentCount?: number }) => void;
 };
 
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
@@ -199,6 +202,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
       },
       category: dbVideo.category,
       tags: dbVideo.tags || [],
+      likes: Math.floor(Math.random() * 1000) + 100, // Mock likes
+      commentCount: Math.floor(Math.random() * 50) + 5, // Mock comment count
     };
   };
 
@@ -229,6 +234,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
             },
             category: 'mathematics',
             tags: ['calculus', 'mathematics', 'derivatives', 'integrals'],
+            likes: 150,
+            commentCount: 25,
           },
           {
             id: 'sample-2',
@@ -247,6 +254,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
             },
             category: 'physics',
             tags: ['physics', 'mechanics', 'newton laws'],
+            likes: 320,
+            commentCount: 45,
           },
           {
             id: 'sample-3',
@@ -265,6 +274,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
             },
             category: 'chemistry',
             tags: ['chemistry', 'chemical bonds', 'science'],
+            likes: 180,
+            commentCount: 30,
           },
           {
             id: 'sample-4',
@@ -283,6 +294,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
             },
             category: 'computer_science',
             tags: ['programming', 'python', 'coding'],
+            likes: 2500,
+            commentCount: 180,
           },
         ];
         setVideos(sampleVideos);
@@ -319,8 +332,31 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         tags: videoData.tags || [],
       });
 
-      // Refresh videos to include the new one
-      await loadVideos();
+      // Create a properly formatted video object for immediate display
+      const formattedNewVideo: Video = {
+        id: newVideo.id,
+        title: newVideo.title,
+        description: newVideo.description,
+        thumbnailUrl: newVideo.thumbnail_url,
+        videoUrl: videoUrlToUse,
+        duration: newVideo.duration,
+        views: 0,
+        createdAt: newVideo.created_at,
+        author: {
+          id: newVideo.author_id,
+          name: videoData.authorName || 'Current User',
+          avatar: videoData.authorAvatar || 'https://randomuser.me/api/portraits/men/1.jpg',
+          isVerified: false,
+        },
+        category: newVideo.category,
+        tags: newVideo.tags || [],
+        likes: 0,
+        commentCount: 0,
+      };
+
+      // Add the new video to the beginning of the list for immediate display
+      setVideos(prevVideos => [formattedNewVideo, ...prevVideos]);
+
     } catch (err) {
       console.error('Error creating video:', err);
       throw err;
@@ -365,6 +401,21 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         )
       );
     }
+  };
+
+  const updateVideoStats = (videoId: string, updates: { views?: number; likes?: number; commentCount?: number }) => {
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.id === videoId 
+          ? { 
+              ...video, 
+              ...(updates.views !== undefined && { views: updates.views }),
+              ...(updates.likes !== undefined && { likes: updates.likes }),
+              ...(updates.commentCount !== undefined && { commentCount: updates.commentCount })
+            }
+          : video
+      )
+    );
   };
 
   // Filter for featured videos (could be based on various criteria)
@@ -417,6 +468,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         createVideo,
         incrementVideoViews,
         viewedVideos,
+        updateVideoStats,
       }}
     >
       {children}
