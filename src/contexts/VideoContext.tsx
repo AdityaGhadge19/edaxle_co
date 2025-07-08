@@ -373,15 +373,6 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
       // Add to viewed videos set
       setViewedVideos(prev => new Set([...prev, videoId]));
 
-      // Update the video views in the local state immediately for better UX
-      setVideos(prevVideos => 
-        prevVideos.map(video => 
-          video.id === videoId 
-            ? { ...video, views: video.views + 1 }
-            : video
-        )
-      );
-
       // Call the API to increment views in the database
       await videoApi.incrementViews(videoId, userId);
     } catch (error) {
@@ -392,14 +383,6 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         newSet.delete(videoId);
         return newSet;
       });
-      
-      setVideos(prevVideos => 
-        prevVideos.map(video => 
-          video.id === videoId 
-            ? { ...video, views: video.views - 1 }
-            : video
-        )
-      );
     }
   };
 

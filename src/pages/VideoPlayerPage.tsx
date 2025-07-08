@@ -33,6 +33,8 @@ const VideoPlayerPage = () => {
   const [notes, setNotes] = useState<{ time: number; text: string }[]>([]);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [likeCount, setLikeCount] = useState(0);
+  const [dislikeCount, setDislikeCount] = useState(0);
+  const [viewCount, setViewCount] = useState(0);
   const [followerCount, setFollowerCount] = useState(0);
   const [showDescription, setShowDescription] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
@@ -102,16 +104,23 @@ const VideoPlayerPage = () => {
       const foundVideo = getVideoById(videoId);
       if (foundVideo) {
         setVideo(foundVideo);
+        
+        // Reset all states for new video
         setIsLiked(false);
         setIsDisliked(false);
         setIsSaved(false);
         setIsFollowing(Math.random() > 0.5);
         setNotes([]);
         setCurrentProgress(0);
-        setLikeCount(foundVideo.likes || Math.floor(Math.random() * 5000) + 500);
-        setFollowerCount(Math.floor(Math.random() * 100000) + 10000);
         setIsTheaterMode(false);
         setHasViewBeenCounted(false);
+        
+        // Start all counts from zero
+        setLikeCount(0);
+        setDislikeCount(0);
+        setViewCount(0);
+        setFollowerCount(0);
+        
         // Mock check for notes - in real app, check if video has notes from API
         setHasNotes(Math.random() > 0.3); // 70% chance of having notes
       }
@@ -125,8 +134,13 @@ const VideoPlayerPage = () => {
         await incrementVideoViews(videoId, user?.id);
         setHasViewBeenCounted(true);
         
-        // Update the local video state with new view count
-        setVideo(prev => prev ? { ...prev, views: prev.views + 1 } : prev);
+        // Increment view count from current state
+        setViewCount(prev => prev + 1);
+        
+        // Update the video stats in context
+        if (video) {
+          updateVideoStats(video.id, { views: viewCount + 1 });
+        }
       } catch (error) {
         console.error('Error counting view:', error);
       }
@@ -135,40 +149,49 @@ const VideoPlayerPage = () => {
 
   const handleLike = () => {
     if (isLiked) {
-      const newLikeCount = likeCount - 1;
-      setLikeCount(newLikeCount);
+      // User is unliking the video
+      setLikeCount(prev => prev - 1);
       setIsLiked(false);
-      
-      // Update video stats in context
-      if (video) {
-        updateVideoStats(video.id, { likes: newLikeCount });
-      }
     } else {
-      const newLikeCount = likeCount + 1;
-      setLikeCount(newLikeCount);
+      // User is liking the video
+      setLikeCount(prev => prev + 1);
       setIsLiked(true);
+      
+      // If user was disliking, remove the dislike
       if (isDisliked) {
+        setDislikeCount(prev => prev - 1);
         setIsDisliked(false);
       }
-      
-      // Update video stats in context
-      if (video) {
-        updateVideoStats(video.id, { likes: newLikeCount });
-      }
+    }
+    
+    // Update video stats in context
+    if (video) {
+      const newLikeCount = isLiked ? likeCount - 1 : likeCount + 1;
+      updateVideoStats(video.id, { likes: newLikeCount });
     }
   };
 
   const handleDislike = () => {
-    setIsDisliked(!isDisliked);
-    if (isLiked) {
-      const newLikeCount = likeCount - 1;
-      setLikeCount(newLikeCount);
-      setIsLiked(false);
+    if (isDisliked) {
+      // User is removing dislike
+      setDislikeCount(prev => prev - 1);
+      setIsDisliked(false);
+    } else {
+      // User is disliking the video
+      setDislikeCount(prev => prev + 1);
+      setIsDisliked(true);
       
-      // Update video stats in context
-      if (video) {
-        updateVideoStats(video.id, { likes: newLikeCount });
+      // If user was liking, remove the like
+      if (isLiked) {
+        setLikeCount(prev => prev - 1);
+        setIsLiked(false);
       }
+    }
+    
+    // Update video stats in context (likes should decrease if user was liking)
+    if (video) {
+      const newLikeCount = isLiked ? likeCount - 1 : likeCount;
+      updateVideoStats(video.id, { likes: newLikeCount });
     }
   };
 
@@ -178,10 +201,12 @@ const VideoPlayerPage = () => {
 
   const handleFollow = () => {
     if (isFollowing) {
-      setFollowerCount((prev: number) => prev - 1);
+      // Unfollow
+      setFollowerCount(prev => prev - 1);
       setIsFollowing(false);
     } else {
-      setFollowerCount((prev: number) => prev + 1);
+      // Follow
+      setFollowerCount(prev => prev + 1);
       setIsFollowing(true);
     }
   };
@@ -332,7 +357,7 @@ const VideoPlayerPage = () => {
             </h1>
             <div className="flex flex-wrap justify-between items-center mb-3 gap-2">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                {formatViewCount(video.views)} views •{' '}
+                {formatViewCount(viewCount)} views •{' '}
                 {formatDistanceToNow(video.createdAt)}
               </div>
               <div className="flex items-center space-x-2">
@@ -357,11 +382,12 @@ const VideoPlayerPage = () => {
                   onClick={handleDislike}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
                     isDisliked
-                      ? 'text-[#1E90FF] bg-[#1E90FF]/10'
+                      ? 'text-red-500 bg-red-500/10'
                       : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <ThumbsDown size={22} />
+                  <ThumbsDown size={16} />
+                  <span>{formatViewCount(dislikeCount)}</span>
                 </button>
                 <button
                   onClick={handleShare}
