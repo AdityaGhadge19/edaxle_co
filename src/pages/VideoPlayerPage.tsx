@@ -166,8 +166,10 @@ const VideoPlayerPage = () => {
     
     // Update video stats in context
     if (video) {
-      const newLikeCount = isLiked ? likeCount - 1 : likeCount + 1;
-      updateVideoStats(video.id, { likes: newLikeCount });
+      // Use setTimeout to ensure state has updated
+      setTimeout(() => {
+        updateVideoStats(video.id, { likes: isLiked ? likeCount - 1 : likeCount + 1 });
+      }, 0);
     }
   };
 
@@ -387,7 +389,6 @@ const VideoPlayerPage = () => {
                   }`}
                 >
                   <ThumbsDown size={16} />
-                  <span>{formatViewCount(dislikeCount)}</span>
                 </button>
                 <button
                   onClick={handleShare}
