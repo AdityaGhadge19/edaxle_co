@@ -135,11 +135,11 @@ const VideoPlayerPage = () => {
         setHasViewBeenCounted(true);
         
         // Increment view count from current state
-        setViewCount(prev => prev + 1);
+        setViewCount(1);
         
         // Update the video stats in context
         if (video) {
-          updateVideoStats(video.id, { views: viewCount + 1 });
+          updateVideoStats(video.id, { views: 1 });
         }
       } catch (error) {
         console.error('Error counting view:', error);
@@ -148,28 +148,23 @@ const VideoPlayerPage = () => {
   };
 
   const handleLike = () => {
+    let newLikeCount;
+    
     if (isLiked) {
       // User is unliking the video
-      setLikeCount(prev => prev - 1);
+      newLikeCount = likeCount - 1;
+      setLikeCount(newLikeCount);
       setIsLiked(false);
     } else {
       // User is liking the video
-      setLikeCount(prev => prev + 1);
+      newLikeCount = likeCount + 1;
+      setLikeCount(newLikeCount);
       setIsLiked(true);
       
       // If user was disliking, remove the dislike
       if (isDisliked) {
-        setDislikeCount(prev => prev - 1);
         setIsDisliked(false);
       }
-    }
-    
-    // Update video stats in context
-    if (video) {
-      // Use setTimeout to ensure state has updated
-      setTimeout(() => {
-        updateVideoStats(video.id, { likes: isLiked ? likeCount - 1 : likeCount + 1 });
-      }, 0);
     }
   };
 
@@ -188,12 +183,6 @@ const VideoPlayerPage = () => {
         setLikeCount(prev => prev - 1);
         setIsLiked(false);
       }
-    }
-    
-    // Update video stats in context (likes should decrease if user was liking)
-    if (video) {
-      const newLikeCount = isLiked ? likeCount - 1 : likeCount;
-      updateVideoStats(video.id, { likes: newLikeCount });
     }
   };
 
