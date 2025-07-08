@@ -16,6 +16,7 @@ import VideoPlayer from '../components/video/VideoPlayer';
 import VideoCard from '../components/video/VideoCard';
 import VideoNotes from '../components/video/VideoNotes';
 import { formatDistanceToNow } from '../utils/dateUtils';
+import { formatCommentTime } from '../utils/dateUtils';
 import { formatViewCount } from '../utils/formatUtils';
 
 const VideoPlayerPage = () => {
@@ -53,10 +54,11 @@ const VideoPlayerPage = () => {
           avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
         },
         content: 'This explanation is so clear! Finally understood this concept. Thank you!',
-        timestamp: '2 days ago',
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         likes: 24,
         replies: 3,
         isLiked: false,
+        showReplies: false,
       },
       {
         id: '2',
@@ -65,10 +67,11 @@ const VideoPlayerPage = () => {
           avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
         },
         content: 'Could you make a follow-up video about advanced applications of this topic?',
-        timestamp: '1 week ago',
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         likes: 8,
         replies: 1,
         isLiked: false,
+        showReplies: false,
       },
       {
         id: '3',
@@ -77,10 +80,11 @@ const VideoPlayerPage = () => {
           avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
         },
         content: 'The examples you provided really helped me understand the practical applications. Great work!',
-        timestamp: '3 days ago',
+        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
         likes: 15,
         replies: 0,
         isLiked: true,
+        showReplies: false,
       },
     ];
     
@@ -232,10 +236,11 @@ const VideoPlayerPage = () => {
           avatar: user.avatar || 'https://randomuser.me/api/portraits/men/1.jpg',
         },
         content: comment,
-        timestamp: 'just now',
+        timestamp: new Date().toISOString(),
         likes: 0,
         replies: 0,
         isLiked: false,
+        showReplies: false,
       };
       
       setComments([newComment, ...comments]);
@@ -261,6 +266,30 @@ const VideoPlayerPage = () => {
           : comment
       )
     );
+  };
+
+  const handleShowReplies = (commentId: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === commentId
+          ? { ...comment, showReplies: !comment.showReplies }
+          : comment
+      )
+    );
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      setComments(prevComments => 
+        prevComments.filter(comment => comment.id !== commentId)
+      );
+      
+      // Update comment count in video stats
+      if (video) {
+        const newCommentCount = comments.length - 1;
+        updateVideoStats(video.id, { commentCount: newCommentCount });
+      }
+    }
   };
 
   const handleProgress = (progress: number) => {
@@ -556,7 +585,7 @@ const VideoPlayerPage = () => {
                         type="text"
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="w-full px-0 py-2 border-0 border-b-2 border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:border-[#1E90FF]"
+                        className="w-full px-0 py-2 border-0 border-b-2 border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:border-[#1E90FF] placeholder-gray-500"
                         placeholder="Add a comment..."
                       />
                       {comment && (
@@ -582,11 +611,31 @@ const VideoPlayerPage = () => {
                 </form>
               )}
               
+              {/* Sort Comments */}
+              {comments.length > 0 && (
+                <div className="mb-4">
+                  <select 
+                    className="text-sm bg-transparent border-none focus:outline-none text-gray-600 dark:text-gray-400"
+                    onChange={(e) => {
+                      const sortType = e.target.value;
+                      if (sortType === 'newest') {
+                        setComments([...comments].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+                      } else if (sortType === 'top') {
+                        setComments([...comments].sort((a, b) => b.likes - a.likes));
+                      }
+                    }}
+                  >
+                    <option value="top">Top comments</option>
+                    <option value="newest">Newest first</option>
+                  </select>
+                </div>
+              )}
+
               {/* Comments List */}
               {comments.length > 0 ? (
                 <div className="space-y-4">
                   {comments.map((comment) => (
-                    <div key={comment.id} className="flex space-x-3">
+                    <div key={comment.id} className="flex space-x-3 group">
                       <img
                         src={comment.user.avatar}
                         alt={comment.user.name}
@@ -598,7 +647,7 @@ const VideoPlayerPage = () => {
                             {comment.user.name}
                           </h4>
                           <span className="text-xs text-gray-500">
-                            {comment.timestamp}
+                            {formatCommentTime(comment.timestamp)}
                           </span>
                         </div>
                         <p className="text-sm mb-2">{comment.content}</p>
@@ -610,7 +659,7 @@ const VideoPlayerPage = () => {
                             }`}
                           >
                             <ThumbsUp size={14} />
-                            <span>{comment.likes}</span>
+                            {comment.likes > 0 && <span>{comment.likes}</span>}
                           </button>
                           <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
                             <ThumbsDown size={14} />
@@ -618,12 +667,69 @@ const VideoPlayerPage = () => {
                           <button className="hover:text-[#1E90FF] transition">
                             Reply
                           </button>
+                          {/* Show more options on hover */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button className="hover:text-[#1E90FF] transition text-xs">
+                              ⋮
+                            </button>
+                          </div>
                           {comment.replies > 0 && (
                             <button className="text-[#1E90FF] hover:underline">
-                              {comment.replies} replies
+                              ↳ {comment.replies} {comment.replies === 1 ? 'reply' : 'replies'}
                             </button>
                           )}
                         </div>
+                        
+                        {/* Reply Section (expandable) */}
+                        {comment.showReplies && (
+                          <div className="mt-3 ml-4 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+                            <div className="space-y-3">
+                              {/* Mock replies */}
+                              <div className="flex space-x-2">
+                                <img
+                                  src="https://randomuser.me/api/portraits/women/25.jpg"
+                                  alt="Reply user"
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <h5 className="font-medium text-xs">Jane Doe</h5>
+                                    <span className="text-xs text-gray-500">1 day ago</span>
+                                  </div>
+                                  <p className="text-xs">Thanks for the explanation!</p>
+                                  <div className="flex items-center space-x-2 mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                    <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
+                                      <ThumbsUp size={12} />
+                                      <span>2</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
+                                      <ThumbsDown size={12} />
+                                    </button>
+                                    <button className="hover:text-[#1E90FF] transition">Reply</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Add reply form */}
+                            {user && (
+                              <div className="mt-3 flex space-x-2">
+                                <img
+                                  src={user.avatar || 'https://randomuser.me/api/portraits/men/1.jpg'}
+                                  alt={user.name}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                  <input
+                                    type="text"
+                                    className="w-full px-0 py-1 border-0 border-b border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:border-[#1E90FF] text-xs placeholder-gray-500"
+                                    placeholder="Add a reply..."
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
