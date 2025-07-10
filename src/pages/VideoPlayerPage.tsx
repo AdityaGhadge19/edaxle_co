@@ -9,7 +9,6 @@ import {
   Download,
   Flag,
   UserPlus,
-  Send,
 } from 'lucide-react';
 import { useVideos } from '../contexts/VideoContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,385 +19,704 @@ import { formatDistanceToNow } from '../utils/dateUtils';
 import { formatCommentTime } from '../utils/dateUtils';
 import { formatViewCount } from '../utils/formatUtils';
 
-const VideoPlayerPage: React.FC = () => {
+const VideoPlayerPage = () => {
   const { videoId } = useParams<{ videoId: string }>();
-  const { videos, loading } = useVideos();
+  const { getVideoById, videos, incrementVideoViews, updateVideoStats } = useVideos();
   const { user } = useAuth();
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [following, setFollowing] = useState(false);
-  const [showComments, setShowComments] = useState(true);
-  const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState([
-    {
-      id: '1',
-      user: 'John Doe',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=32&h=32&dpr=1',
-      content: 'Great explanation! This really helped me understand the concept.',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      likes: 12,
-    },
-    {
-      id: '2',
-      user: 'Sarah Wilson',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=32&h=32&dpr=1',
-      content: 'Could you make a follow-up video on advanced techniques?',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      likes: 8,
-    },
-    {
-      id: '3',
-      user: 'Mike Chen',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=32&h=32&dpr=1',
-      content: 'The examples you provided were very practical. Thanks!',
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      likes: 15,
-    },
-  ]);
+  const [video, setVideo] = useState(getVideoById(videoId || ''));
+  const [isLiked, setIsLiked] = useState(false);
+  const [isDisliked, setIsDisliked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [comment, setComment] = useState('');
+  const [showNoteTaker, setShowNoteTaker] = useState(false);
+  const [note, setNote] = useState('');
+  const [notes, setNotes] = useState<{ time: number; text: string }[]>([]);
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [dislikeCount, setDislikeCount] = useState(0);
+  const [viewCount, setViewCount] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [showDescription, setShowDescription] = useState(false);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const [hasViewBeenCounted, setHasViewBeenCounted] = useState(false);
+  const [hasNotes, setHasNotes] = useState(true);
+  const [comments, setComments] = useState<any[]>([]);
 
-  const video = videos.find(v => v.id === videoId);
-  const relatedVideos = videos.filter(v => v.id !== videoId && v.category === video?.category).slice(0, 8);
+  // Initialize comments with mock data
+  useEffect(() => {
+    // Mock comments - in real app, fetch from API
+    const mockComments = [
+      {
+        id: '1',
+        user: {
+          name: 'Sarah Johnson',
+          avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+        },
+        content: 'This explanation is so clear! Finally understood this concept. Thank you!',
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        likes: 24,
+        replies: 3,
+        isLiked: false,
+        showReplies: false,
+      },
+      {
+        id: '2',
+        user: {
+          name: 'Michael Chen',
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+        },
+        content: 'Could you make a follow-up video about advanced applications of this topic?',
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        likes: 8,
+        replies: 1,
+        isLiked: false,
+        showReplies: false,
+      },
+      {
+        id: '3',
+        user: {
+          name: 'Emma Wilson',
+          avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
+        },
+        content: 'The examples you provided really helped me understand the practical applications. Great work!',
+        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        likes: 15,
+        replies: 0,
+        isLiked: true,
+        showReplies: false,
+      },
+    ];
+    
+    // Randomly show 0-3 comments to test empty state
+    const randomCommentCount = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+    setComments(mockComments.slice(0, randomCommentCount));
+  }, [videoId]);
+
+  // Simulate related videos - more videos for better suggestions
+  const relatedVideos = videos
+    .filter((v: any) => v.id !== videoId && v.category === video?.category)
+    .concat(
+      videos.filter(
+        (v: any) => v.id !== videoId && v.category !== video?.category
+      )
+    )
+    .slice(0, 20);
 
   useEffect(() => {
-    if (video) {
-      document.title = `${video.title} - EduStream`;
+    if (videoId) {
+      const foundVideo = getVideoById(videoId);
+      if (foundVideo) {
+        setVideo(foundVideo);
+        
+        // Reset all states for new video
+        setIsLiked(false);
+        setIsDisliked(false);
+        setIsSaved(false);
+        setIsFollowing(Math.random() > 0.5);
+        setNotes([]);
+        setCurrentProgress(0);
+        setIsTheaterMode(false);
+        setHasViewBeenCounted(false);
+        
+        // Start all counts from zero
+        setLikeCount(0);
+        setDislikeCount(0);
+        setViewCount(0);
+        setFollowerCount(0);
+        
+        // Mock check for notes - in real app, check if video has notes from API
+        setHasNotes(Math.random() > 0.3); // 70% chance of having notes
+      }
     }
-  }, [video]);
+  }, [videoId, getVideoById]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+  // Handle view counting when video starts playing
+  const handleVideoPlay = async () => {
+    if (!hasViewBeenCounted && video && videoId) {
+      try {
+        await incrementVideoViews(videoId, user?.id);
+        setHasViewBeenCounted(true);
+        
+        // Increment view count from current state
+        setViewCount(1);
+        
+        // Update the video stats in context
+        if (video) {
+          updateVideoStats(video.id, { views: 1 });
+        }
+      } catch (error) {
+        console.error('Error counting view:', error);
+      }
+    }
+  };
+
+  const handleLike = () => {
+    let newLikeCount;
+    
+    if (isLiked) {
+      // User is unliking the video
+      newLikeCount = likeCount - 1;
+      setLikeCount(newLikeCount);
+      setIsLiked(false);
+    } else {
+      // User is liking the video
+      newLikeCount = likeCount + 1;
+      setLikeCount(newLikeCount);
+      setIsLiked(true);
+      
+      // If user was disliking, remove the dislike
+      if (isDisliked) {
+        setIsDisliked(false);
+      }
+    }
+  };
+
+  const handleDislike = () => {
+    if (isDisliked) {
+      // User is removing dislike
+      setDislikeCount(prev => prev - 1);
+      setIsDisliked(false);
+    } else {
+      // User is disliking the video
+      setDislikeCount(prev => prev + 1);
+      setIsDisliked(true);
+      
+      // If user was liking, remove the like
+      if (isLiked) {
+        setLikeCount(prev => prev - 1);
+        setIsLiked(false);
+      }
+    }
+  };
+
+  const handleSave = () => {
+    setIsSaved(!isSaved);
+  };
+
+  const handleFollow = () => {
+    if (isFollowing) {
+      // Unfollow
+      setFollowerCount(prev => prev - 1);
+      setIsFollowing(false);
+    } else {
+      // Follow
+      setFollowerCount(prev => prev + 1);
+      setIsFollowing(true);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: video?.title,
+        text: video?.description,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+
+  const handleAddNote = () => {
+    if (note.trim()) {
+      setNotes([...notes, { time: currentProgress, text: note }]);
+      setNote('');
+    }
+  };
+
+  const handleCommentLike = (commentId: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              isLiked: !comment.isLiked,
+              likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1
+            }
+          : comment
+      )
     );
-  }
+  };
+
+  const handleShowReplies = (commentId: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === commentId
+          ? { ...comment, showReplies: !comment.showReplies }
+          : comment
+      )
+    );
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      setComments(prevComments => 
+        prevComments.filter(comment => comment.id !== commentId)
+      );
+      
+      // Update comment count in video stats
+      if (video) {
+        const newCommentCount = comments.length - 1;
+        updateVideoStats(video.id, { commentCount: newCommentCount });
+      }
+    }
+  };
+
+  const handleProgress = (progress: number) => {
+    setCurrentProgress(progress);
+  };
+
+  const handleTheaterModeToggle = () => {
+    setIsTheaterMode(!isTheaterMode);
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   if (!video) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Video not found</h1>
-          <Link to="/" className="text-blue-600 hover:text-blue-700">
-            Return to home
+          <h2 className="text-2xl font-bold mb-2">Video not found</h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            The video you're looking for doesn't exist.
+          </p>
+          <Link
+            to="/"
+            className="mt-4 inline-block py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition"
+          >
+            Go Home
           </Link>
         </div>
       </div>
     );
   }
 
-  const handleLike = () => {
-    if (disliked) setDisliked(false);
-    setLiked(!liked);
-  };
-
-  const handleDislike = () => {
-    if (liked) setLiked(false);
-    setDisliked(!disliked);
-  };
-
-  const handleBookmark = () => {
-    setBookmarked(!bookmarked);
-  };
-
-  const handleFollow = () => {
-    setFollowing(!following);
-  };
-
-  const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newComment.trim()) {
-      const comment = {
-        id: Date.now().toString(),
-        user: user?.name || 'Anonymous',
-        avatar: user?.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=32&h=32&dpr=1',
-        content: newComment,
-        timestamp: new Date(),
-        likes: 0,
-      };
-      setComments([comment, ...comments]);
-      setNewComment('');
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Video Player */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <VideoPlayer video={video} />
-            </div>
+    <div className="w-full flex flex-col items-center">
+      <div
+        className={`grid gap-8 pt-4 px-2 md:px-6 w-full max-w-[1500px] ${
+          isTheaterMode
+            ? 'grid-cols-1'
+            : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px]'
+        }`}
+      >
+        {/* Main Content Column */}
+        <div
+          className="flex flex-col items-center w-full max-w-4xl mx-auto"
+          style={{
+            marginLeft: '-0.5rem',
+            marginTop: '1.5rem',
+          }}
+        >
+          {/* Video Player */}
+          <div
+            className={`w-full bg-black rounded-lg overflow-hidden ${
+              isTheaterMode
+                ? '-ml-6 -mt-6 md:-ml-10 md:-mt-10'
+                : '-ml-6 -mt-6 md:-ml-10 md:-mt-10 aspect-video'
+            }`}
+            style={{
+              maxWidth: 'calc(100% + 2.5rem)',
+              maxHeight: 'calc(100% + 2.5rem)',
+            }}
+          >
+            <VideoPlayer
+              videoUrl={video.videoUrl}
+              title={video.title}
+              onProgress={handleProgress}
+              isTheaterMode={isTheaterMode}
+              onTheaterModeToggle={handleTheaterModeToggle}
+              onPlay={handleVideoPlay}
+            />
+          </div>
 
-            {/* Video Info */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">{video.title}</h1>
-              
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-600">{formatViewCount(video.views)} views</span>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-gray-600">{formatDistanceToNow(video.createdAt)}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleLike}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                      liked
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <ThumbsUp className="w-5 h-5" />
-                    <span>{video.likes + (liked ? 1 : 0)}</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleDislike}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                      disliked
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <ThumbsDown className="w-5 h-5" />
-                  </button>
-                  
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                    <Share2 className="w-5 h-5" />
-                    <span>Share</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleBookmark}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                      bookmarked
-                        ? 'bg-yellow-100 text-yellow-600'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Bookmark className="w-5 h-5" />
-                  </button>
-                  
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                    <Download className="w-5 h-5" />
-                  </button>
-                  
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                    <Flag className="w-5 h-5" />
-                  </button>
-                </div>
+          {/* Video Info Section */}
+          <div
+            className="pt-4 w-full"
+            style={{
+              paddingRight: '1.5rem',
+              marginLeft: '-1rem',
+            }}
+          >
+            <h1 className="text-xl md:text-2xl font-bold mb-2">
+              {video.title}
+            </h1>
+            <div className="flex flex-wrap justify-between items-center mb-3 gap-2">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {formatViewCount(viewCount)} views •{' '}
+                {formatDistanceToNow(video.createdAt)}
               </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  style={{
+                    border: '1px solid #1E90FF',
+                  }}
+                  onClick={handleLike}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
+                    isLiked
+                      ? 'text-[#1E90FF] bg-[#1E90FF]/10'
+                      : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <ThumbsUp size={16} />
+                  <span>{formatViewCount(likeCount)}</span>
+                </button>
+                <button
+                  style={{
+                    border: '1px solid #1E90FF',
+                  }}
+                  onClick={handleDislike}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
+                    isDisliked
+                      ? 'text-red-500 bg-red-500/10'
+                      : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <ThumbsDown size={16} />
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                >
+                  <Share2 size={16} />
+                  <span>Share</span>
+                </button>
+                <button
+                  onClick={handleSave}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-full transition ${
+                    isSaved
+                      ? 'text-[#1E90FF] bg-[#1E90FF]/10'
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Bookmark size={16} />
+                  <span>Save</span>
+                </button>
+                <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                  <Download size={16} />
+                  <span>Download</span>
+                </button>
+                <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                  <Flag size={16} />
+                </button>
+              </div>
+            </div>
+            <hr className="border-border-color my-3" />
 
-              {/* Author Info */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-4">
+            {/* Channel Info */}
+            <div
+              className="flex items-start justify-between mb-4"
+              style={{ marginTop: '1.5rem' }}
+            >
+              <div className="flex items-start space-x-4">
+                <Link
+                  to={`/teacher/${video.author.name
+                    .replace(/\s+/g, '-')
+                    .toLowerCase()}`}
+                >
                   <img
                     src={video.author.avatar}
                     alt={video.author.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{video.author.name}</h3>
-                    <p className="text-sm text-gray-600">{video.author.subscribers} subscribers</p>
-                  </div>
+                </Link>
+                <div>
+                  <Link
+                    to={`/teacher/${video.author.name
+                      .replace(/\s+/g, '-')
+                      .toLowerCase()}`}
+                    className="font-medium hover:text-[#1E90FF] transition block"
+                  >
+                    {video.author.name}
+                  </Link>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatViewCount(followerCount)} followers
+                  </p>
                 </div>
-                
+              </div>
+              {user && user.name !== video.author.name && (
                 <button
                   onClick={handleFollow}
-                  className={`flex items-center space-x-2 px-6 py-2 rounded-lg font-medium transition-colors ${
-                    following
-                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  className={`flex items-center space-x-2 px-6 py-2 rounded-full font-medium transition ${
+                    isFollowing
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      : 'bg-[#1E90FF] text-white hover:bg-[#1E90FF]/90'
                   }`}
                 >
-                  <UserPlus className="w-4 h-4" />
-                  <span>{following ? 'Following' : 'Follow'}</span>
+                  <UserPlus size={16} />
+                  <span>{isFollowing ? 'Following' : 'Follow'}</span>
                 </button>
-              </div>
-
-              {/* Description */}
-              <div className="mt-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                <p className="text-gray-700 leading-relaxed">{video.description}</p>
-              </div>
-
-              {/* Tags */}
-              {video.tags && video.tags.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {video.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               )}
             </div>
 
-            {/* Video Notes */}
-            <VideoNotes videoId={video.id} />
+            {/* Description */}
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6">
+              <div className={`${showDescription ? '' : 'line-clamp-3'}`}>
+                <p className="whitespace-pre-line">{video.description}</p>
+              </div>
+              <button
+                onClick={() => setShowDescription(!showDescription)}
+                className="text-[#1E90FF] hover:underline mt-2 text-sm font-medium"
+              >
+                {showDescription ? 'Show less' : 'Show more'}
+              </button>
+            </div>
+
+            {/* Note Taker */}
+            <button
+              onClick={() => setShowNoteTaker(!showNoteTaker)}
+              className="py-2 px-4 bg-[#1E90FF] text-white rounded-md hover:bg-[#1E90FF]/90 transition mb-6"
+            >
+              {showNoteTaker ? 'Hide Note Taker' : 'Take Notes'}
+            </button>
+
+            {showNoteTaker && (
+              <div className="bg-card-bg border border-border-color rounded-lg p-4 mb-6">
+                <h3 className="font-medium mb-2">
+                  Notes at {formatDuration(currentProgress)}
+                </h3>
+                <div className="flex space-x-2 mb-4">
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-border-color rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                    placeholder="Add a note at current timestamp"
+                  />
+                  <button
+                    onClick={handleAddNote}
+                    className="py-2 px-4 bg-[#1E90FF] text-white rounded-md hover:bg-[#1E90FF]/90 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+                {notes.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Your Notes:</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {notes.map((note, index) => (
+                        <div
+                          key={index}
+                          className="bg-background p-2 rounded-md"
+                        >
+                          <div className="flex justify-between">
+                            <span className="text-xs text-[#1E90FF] font-medium">
+                              {formatDuration(note.time)}
+                            </span>
+                            <button
+                              onClick={() =>
+                                setNotes(notes.filter((_, i) => i !== index))
+                              }
+                              className="text-xs text-red-500"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                          <p className="text-sm mt-1">{note.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Teacher Notes Section - Only show if video has notes */}
+            {hasNotes && (
+              <VideoNotes
+                videoId={video.id}
+                isTeacher={user?.role === 'teacher'}
+              />
+            )}
 
             {/* Comments Section */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">
-                  Comments ({comments.length})
-                </h3>
-                <button
-                  onClick={() => setShowComments(!showComments)}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span>{showComments ? 'Hide' : 'Show'} Comments</span>
-                </button>
-              </div>
+            <div className="mb-6 mt-6">
+              <h3 className="font-medium mb-4 flex items-center">
+                <MessageSquare size={20} className="mr-2" />
+                {comments.length} Comments
+              </h3>
+              
+              {/* Sort Comments */}
+              {comments.length > 0 && (
+                <div className="mb-4">
+                  <select 
+                    className="text-sm bg-transparent border-none focus:outline-none text-gray-600 dark:text-gray-400"
+                    onChange={(e) => {
+                      const sortType = e.target.value;
+                      if (sortType === 'newest') {
+                        setComments([...comments].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+                      } else if (sortType === 'top') {
+                        setComments([...comments].sort((a, b) => b.likes - a.likes));
+                      }
+                    }}
+                  >
+                    <option value="top">Top comments</option>
+                    <option value="newest">Newest first</option>
+                  </select>
+                </div>
+              )}
 
-              {showComments && (
-                <div className="space-y-6">
-                  {/* Add Comment */}
-                  {user && (
-                    <form onSubmit={handleCommentSubmit} className="flex space-x-4">
+              {/* Comments List */}
+              {comments.length > 0 ? (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="flex space-x-3 group">
                       <img
-                        src={user.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=40&h=40&dpr=1'}
-                        alt={user.name}
+                        src={comment.user.avatar}
+                        alt={comment.user.name}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <div className="flex-1">
-                        <textarea
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Add a comment..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                          rows={3}
-                        />
-                        <div className="flex justify-end mt-2">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-medium text-sm">
+                            {comment.user.name}
+                          </h4>
+                          <span className="text-xs text-gray-500">
+                            {formatCommentTime(comment.timestamp)}
+                          </span>
+                        </div>
+                        <p className="text-sm mb-2">{comment.content}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                           <button
-                            type="submit"
-                            disabled={!newComment.trim()}
-                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            onClick={() => handleCommentLike(comment.id)}
+                            className={`flex items-center space-x-1 hover:text-[#1E90FF] transition ${
+                              comment.isLiked ? 'text-[#1E90FF]' : ''
+                            }`}
                           >
-                            <Send className="w-4 h-4" />
-                            <span>Comment</span>
+                            <ThumbsUp size={14} />
+                            {comment.likes > 0 && <span>{comment.likes}</span>}
                           </button>
-                        </div>
-                      </div>
-                    </form>
-                  )}
-
-                  {/* Comments List */}
-                  <div className="space-y-4">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="flex space-x-4">
-                        <img
-                          src={comment.avatar}
-                          alt={comment.user}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="font-medium text-gray-900">{comment.user}</span>
-                            <span className="text-sm text-gray-500">
-                              {formatCommentTime(comment.timestamp)}
-                            </span>
-                          </div>
-                          <p className="text-gray-700 mb-2">{comment.content}</p>
-                          <div className="flex items-center space-x-4">
-                            <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
-                              <ThumbsUp className="w-4 h-4" />
-                              <span className="text-sm">{comment.likes}</span>
-                            </button>
-                            <button className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
-                              Reply
+                          <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
+                            <ThumbsDown size={14} />
+                          </button>
+                          <button className="hover:text-[#1E90FF] transition">
+                            Reply
+                          </button>
+                          {/* Show more options on hover */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button className="hover:text-[#1E90FF] transition text-xs">
+                              ⋮
                             </button>
                           </div>
+                          {comment.replies > 0 && (
+                            <button className="text-[#1E90FF] hover:underline">
+                              ↳ {comment.replies} {comment.replies === 1 ? 'reply' : 'replies'}
+                            </button>
+                          )}
                         </div>
+                        
+                        {/* Reply Section (expandable) */}
+                        {comment.showReplies && (
+                          <div className="mt-3 ml-4 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+                            <div className="space-y-3">
+                              {/* Mock replies */}
+                              <div className="flex space-x-2">
+                                <img
+                                  src="https://randomuser.me/api/portraits/women/25.jpg"
+                                  alt="Reply user"
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <h5 className="font-medium text-xs">Jane Doe</h5>
+                                    <span className="text-xs text-gray-500">1 day ago</span>
+                                  </div>
+                                  <p className="text-xs">Thanks for the explanation!</p>
+                                  <div className="flex items-center space-x-2 mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                    <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
+                                      <ThumbsUp size={12} />
+                                      <span>2</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 hover:text-[#1E90FF] transition">
+                                      <ThumbsDown size={12} />
+                                    </button>
+                                    <button className="hover:text-[#1E90FF] transition">Reply</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Add reply form */}
+                            {user && (
+                              <div className="mt-3 flex space-x-2">
+                                <img
+                                  src={user.avatar || 'https://randomuser.me/api/portraits/men/1.jpg'}
+                                  alt={user.name}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                  <input
+                                    type="text"
+                                    className="w-full px-0 py-1 border-0 border-b border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:border-[#1E90FF] text-xs placeholder-gray-500"
+                                    placeholder="Add a reply..."
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">Be the first one to comment!</p>
+                  <p className="text-sm">Share your thoughts about this video.</p>
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Related Videos */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Related Videos</h3>
-              <div className="space-y-4">
-                {relatedVideos.map((relatedVideo) => (
-                  <Link
-                    key={relatedVideo.id}
-                    to={`/video/${relatedVideo.id}`}
-                    className="block group"
-                  >
-                    <div className="flex space-x-3">
-                      <div className="relative flex-shrink-0">
-                        <img
-                          src={relatedVideo.thumbnail}
-                          alt={relatedVideo.title}
-                          className="w-24 h-16 object-cover rounded-lg group-hover:opacity-80 transition-opacity"
-                        />
-                        <div className="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 rounded">
-                          {Math.floor(relatedVideo.duration / 60)}:{(relatedVideo.duration % 60).toString().padStart(2, '0')}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {relatedVideo.title}
-                        </h4>
-                        <p className="text-xs text-gray-600 mt-1">{relatedVideo.author.name}</p>
-                        <div className="flex items-center space-x-1 text-xs text-gray-500 mt-1">
-                          <span>{formatViewCount(relatedVideo.views)} views</span>
-                          <span>•</span>
-                          <span>{formatDistanceToNow(relatedVideo.createdAt)}</span>
-                        </div>
+        {/* Related Videos Sidebar - Only show when not in theater mode */}
+        {!isTheaterMode && (
+          <div
+            className="hidden lg:block w-[370px]"
+            style={{ marginTop: '-1rem' }}
+          >
+            <h3 className="font-medium mb-4">Up Next</h3>
+            <div className="space-y-3">
+              {relatedVideos.slice(0, 10).map((relatedVideo) => (
+                <div
+                  key={relatedVideo.id}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition cursor-pointer"
+                >
+                  <Link to={`/video/${relatedVideo.id}`} className="block">
+                    <div className="relative mb-2">
+                      <img
+                        src={relatedVideo.thumbnailUrl}
+                        alt={relatedVideo.title}
+                        className="w-full aspect-video object-cover rounded"
+                      />
+                      <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 rounded">
+                        {formatDuration(relatedVideo.duration)}
                       </div>
                     </div>
+                    <h4 className="text-sm font-medium line-clamp-2 hover:text-[#1E90FF] transition mb-1">
+                      {relatedVideo.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      {relatedVideo.author.name}
+                    </p>
+                    <div className="text-xs text-gray-500">
+                      <span>{formatViewCount(relatedVideo.views)} views</span>
+                      <span className="mx-1">•</span>
+                      <span>{formatDistanceToNow(relatedVideo.createdAt)}</span>
+                    </div>
                   </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Video Stats */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Video Statistics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Views</span>
-                  <span className="font-medium">{formatViewCount(video.views)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Likes</span>
-                  <span className="font-medium">{video.likes}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-medium">
-                    {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Published</span>
-                  <span className="font-medium">{formatDistanceToNow(video.createdAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Category</span>
-                  <span className="font-medium">{video.category}</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
