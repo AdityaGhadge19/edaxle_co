@@ -58,7 +58,7 @@ const VideoPlayerPage: React.FC = () => {
   ]);
 
   const video = videos.find(v => v.id === videoId);
-  const relatedVideos = videos.filter(v => v.id !== id && v.category === video?.category).slice(0, 8);
+  const relatedVideos = videos.filter(v => v.id !== videoId && v.category === video?.category).slice(0, 8);
 
   useEffect(() => {
     if (video) {
