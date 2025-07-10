@@ -21,7 +21,7 @@ import { formatCommentTime } from '../utils/dateUtils';
 import { formatViewCount } from '../utils/formatUtils';
 
 const VideoPlayerPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { videoId } = useParams<{ videoId: string }>();
   const { videos, loading } = useVideos();
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
@@ -57,7 +57,7 @@ const VideoPlayerPage: React.FC = () => {
     },
   ]);
 
-  const video = videos.find(v => v.id === id);
+  const video = videos.find(v => v.id === videoId);
   const relatedVideos = videos.filter(v => v.id !== id && v.category === video?.category).slice(0, 8);
 
   useEffect(() => {
