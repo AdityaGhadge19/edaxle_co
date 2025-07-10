@@ -226,8 +226,7 @@ const VideoPlayerPage = () => {
     }
   };
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitComment = () => {
     if (comment.trim() && user) {
       const newComment = {
         id: Date.now().toString(),
